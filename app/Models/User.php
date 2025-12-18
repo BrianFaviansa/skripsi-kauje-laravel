@@ -32,7 +32,6 @@ class User extends Authenticatable
         'position',
         'verification_file_url',
         'profile_picture_url',
-        'refresh_token',
         'verification_status',
         'role_id',
         'province_id',
@@ -48,7 +47,6 @@ class User extends Authenticatable
      */
     protected $hidden = [
         'password',
-        'refresh_token',
         'remember_token',
     ];
 

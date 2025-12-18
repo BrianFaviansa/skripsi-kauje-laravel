@@ -26,7 +26,6 @@ return new class extends Migration
             $table->string('position')->nullable();
             $table->string('verification_file_url');
             $table->string('profile_picture_url')->nullable();
-            $table->string('refresh_token')->nullable();
             $table->enum('verification_status', ['PENDING', 'VERIFIED', 'REJECTED'])->default('PENDING');
             $table->foreignUuid('role_id')->constrained('roles');
             $table->foreignUuid('province_id')->constrained('provinces');
