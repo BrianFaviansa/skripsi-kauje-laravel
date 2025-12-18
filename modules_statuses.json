@@ -1,5 +1,6 @@
 {
     "Auth": true,
     "News": true,
-    "Job": true
+    "Job": true,
+    "Collaboration": true
 }

@@ -18,9 +18,6 @@ class AuthController extends Controller
 
     /**
      * Register a new user.
-     *
-     * @param RegisterRequest $request
-     * @return JsonResponse
      */
     public function register(RegisterRequest $request): JsonResponse
     {
@@ -34,9 +31,6 @@ class AuthController extends Controller
 
     /**
      * Login a user.
-     *
-     * @param LoginRequest $request
-     * @return JsonResponse
      */
     public function login(LoginRequest $request): JsonResponse
     {
@@ -50,9 +44,6 @@ class AuthController extends Controller
 
     /**
      * Get the authenticated user.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function me(Request $request): JsonResponse
     {
@@ -66,9 +57,6 @@ class AuthController extends Controller
 
     /**
      * Logout the authenticated user.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function logout(Request $request): JsonResponse
     {
@@ -81,9 +69,6 @@ class AuthController extends Controller
 
     /**
      * Upload verification file.
-     *
-     * @param UploadVerificationFileRequest $request
-     * @return JsonResponse
      */
     public function uploadVerificationFile(UploadVerificationFileRequest $request): JsonResponse
     {
