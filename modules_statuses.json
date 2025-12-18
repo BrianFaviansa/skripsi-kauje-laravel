@@ -3,5 +3,6 @@
     "News": true,
     "Job": true,
     "Collaboration": true,
-    "Product": true
+    "Product": true,
+    "Forum": true
 }
