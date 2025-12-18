@@ -3,57 +3,97 @@
 namespace Modules\Auth\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Auth\Http\Requests\LoginRequest;
+use Modules\Auth\Http\Requests\RegisterRequest;
+use Modules\Auth\Http\Requests\UploadVerificationFileRequest;
+use Modules\Auth\Services\AuthService;
 
 class AuthController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
+    public function __construct(
+        protected AuthService $authService
+    ) {}
 
-        return response()->json([]);
+    /**
+     * Register a new user.
+     *
+     * @param RegisterRequest $request
+     * @return JsonResponse
+     */
+    public function register(RegisterRequest $request): JsonResponse
+    {
+        $user = $this->authService->register($request->validated());
+
+        return response()->json([
+            'message' => 'Registrasi berhasil',
+            'data' => $user,
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Login a user.
+     *
+     * @param LoginRequest $request
+     * @return JsonResponse
      */
-    public function store(Request $request)
+    public function login(LoginRequest $request): JsonResponse
     {
-        //
+        $result = $this->authService->login($request->validated());
 
-        return response()->json([]);
+        return response()->json([
+            'message' => 'Login berhasil',
+            'data' => $result,
+        ]);
     }
 
     /**
-     * Show the specified resource.
+     * Get the authenticated user.
+     *
+     * @param Request $request
+     * @return JsonResponse
      */
-    public function show($id)
+    public function me(Request $request): JsonResponse
     {
-        //
+        $user = $this->authService->me($request->user());
 
-        return response()->json([]);
+        return response()->json([
+            'message' => 'Data user berhasil diambil',
+            'data' => $user,
+        ]);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Logout the authenticated user.
+     *
+     * @param Request $request
+     * @return JsonResponse
      */
-    public function update(Request $request, $id)
+    public function logout(Request $request): JsonResponse
     {
-        //
+        $this->authService->logout($request->user());
 
-        return response()->json([]);
+        return response()->json([
+            'message' => 'Logout berhasil',
+        ]);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Upload verification file.
+     *
+     * @param UploadVerificationFileRequest $request
+     * @return JsonResponse
      */
-    public function destroy($id)
+    public function uploadVerificationFile(UploadVerificationFileRequest $request): JsonResponse
     {
-        //
+        $url = $this->authService->uploadVerificationFile($request->file('file'));
 
-        return response()->json([]);
+        return response()->json([
+            'message' => 'File berhasil diupload',
+            'data' => [
+                'verification_file_url' => $url,
+            ],
+        ]);
     }
 }
