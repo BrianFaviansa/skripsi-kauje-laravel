@@ -2,9 +2,9 @@
 
 namespace Modules\Auth\Services;
 
-use App\Models\User;
 use App\Models\City;
 use App\Models\Role;
+use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -18,7 +18,6 @@ class AuthService
      */
     public function register(array $data): User
     {
-        // Check if city belongs to the selected province
         $city = City::find($data['city_id']);
 
         if (! $city) {
@@ -33,7 +32,6 @@ class AuthService
             ]);
         }
 
-        // If no role_id provided, assign default "Alumni" role
         if (empty($data['role_id'])) {
             $alumniRole = Role::where('name', 'Alumni')->first();
 
@@ -46,10 +44,8 @@ class AuthService
             $data['role_id'] = $alumniRole->id;
         }
 
-        // Create user (password will be automatically hashed by the model cast)
         $user = User::create($data);
 
-        // Load relationships for response
         $user->load(['role', 'province', 'city', 'faculty', 'major']);
 
         return $user;
@@ -76,7 +72,6 @@ class AuthService
             ]);
         }
 
-        // Create Sanctum token
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return [
@@ -100,7 +95,6 @@ class AuthService
      */
     public function logout(User $user): void
     {
-        // Revoke the current token
         $user->currentAccessToken()->delete();
     }
 
@@ -109,13 +103,10 @@ class AuthService
      */
     public function uploadVerificationFile(UploadedFile $file): string
     {
-        // Generate unique filename
         $filename = uniqid().'_'.time().'.'.$file->getClientOriginalExtension();
 
-        // Store file in public/uploads/verification
         $path = $file->storeAs('uploads/verification', $filename, 'public');
 
-        // Return the URL
         return '/storage/'.$path;
     }
 }
