@@ -2,5 +2,6 @@
     "Auth": true,
     "News": true,
     "Job": true,
-    "Collaboration": true
+    "Collaboration": true,
+    "Product": true
 }

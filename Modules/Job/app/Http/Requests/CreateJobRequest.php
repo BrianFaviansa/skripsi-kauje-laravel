@@ -17,7 +17,7 @@ class CreateJobRequest extends FormRequest
             'title' => ['required', 'string', 'min:3'],
             'content' => ['required', 'string', 'min:10'],
             'company' => ['required', 'string', 'min:2'],
-            'job_type' => ['required', 'string', 'in:FULL_TIME,PART_TIME,CONTRACT,INTERNSHIP,FREELANCE'],
+            'job_type' => ['required', 'string', 'in:LOKER,MAGANG'],
             'open_from' => ['required', 'date'],
             'open_until' => ['required', 'date', 'after:open_from'],
             'registration_link' => ['nullable', 'url'],

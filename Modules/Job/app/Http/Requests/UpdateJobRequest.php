@@ -17,7 +17,7 @@ class UpdateJobRequest extends FormRequest
             'title' => ['sometimes', 'string', 'min:3'],
             'content' => ['sometimes', 'string', 'min:10'],
             'company' => ['sometimes', 'string', 'min:2'],
-            'job_type' => ['sometimes', 'string', 'in:FULL_TIME,PART_TIME,CONTRACT,INTERNSHIP,FREELANCE'],
+            'job_type' => ['sometimes', 'string', 'in:LOKER,MAGANG'],
             'open_from' => ['sometimes', 'date'],
             'open_until' => ['sometimes', 'date'],
             'registration_link' => ['nullable', 'url'],
