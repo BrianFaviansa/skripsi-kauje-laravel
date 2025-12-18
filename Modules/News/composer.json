@@ -1,5 +1,5 @@
 {
-    "name": "nwidart/auth",
+    "name": "nwidart/news",
     "description": "",
     "authors": [
         {
@@ -10,19 +10,21 @@
     "extra": {
         "laravel": {
             "providers": [],
-            "aliases": {}
+            "aliases": {
+
+            }
         }
     },
     "autoload": {
         "psr-4": {
-            "Modules\\Auth\\": "app/",
-            "Modules\\Auth\\Database\\Factories\\": "database/factories/",
-            "Modules\\Auth\\Database\\Seeders\\": "database/seeders/"
+            "Modules\\News\\": "app/",
+            "Modules\\News\\Database\\Factories\\": "database/factories/",
+            "Modules\\News\\Database\\Seeders\\": "database/seeders/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Modules\\Auth\\Tests\\": "tests/"
+            "Modules\\News\\Tests\\": "tests/"
         }
     }
 }
