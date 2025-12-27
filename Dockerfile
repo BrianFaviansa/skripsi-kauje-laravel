@@ -88,7 +88,6 @@ RUN { \
 
 # Set environment variables
 ENV SERVER_NAME=":8000"
-ENV FRANKENPHP_CONFIG="worker ./public/index.php"
 
 # Copy application code
 COPY . .

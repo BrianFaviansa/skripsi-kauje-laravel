@@ -48,15 +48,17 @@ php artisan storage:link 2>/dev/null || true
 
 echo "================================================"
 echo "✅ Application ready!"
-echo "🔥 Starting Laravel Octane with FrankenPHP..."
+echo "🔥 Starting Laravel Octane..."
 echo "   Workers: ${OCTANE_WORKERS:-auto}"
 echo "   Max Requests: ${OCTANE_MAX_REQUESTS:-1000}"
 echo "   Port: 8000"
 echo "================================================"
 
-# Start Laravel Octane with FrankenPHP
-exec php artisan octane:frankenphp \
+# Start Laravel Octane with FrankenPHP (using --caddyfile to avoid worker issues)
+exec php artisan octane:start \
+    --server=frankenphp \
     --host=0.0.0.0 \
     --port=8000 \
-    --workers=${OCTANE_WORKERS:-auto} \
-    --max-requests=${OCTANE_MAX_REQUESTS:-1000}
+    --workers=${OCTANE_WORKERS:-4} \
+    --max-requests=${OCTANE_MAX_REQUESTS:-1000} \
+    --no-interaction
