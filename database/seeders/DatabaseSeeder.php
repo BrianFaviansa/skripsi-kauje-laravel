@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             JobFieldSeeder::class,
             CollaborationFieldSeeder::class,
             ProvinceCitySeeder::class,
+            MajorSeeder::class,
+            TestUserSeeder::class,
         ]);
     }
 }

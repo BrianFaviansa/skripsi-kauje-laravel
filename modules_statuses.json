@@ -4,5 +4,6 @@
     "Job": true,
     "Collaboration": true,
     "Product": true,
-    "Forum": true
+    "Forum": true,
+    "User": true
 }

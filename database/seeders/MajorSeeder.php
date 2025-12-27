@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Major;
+use App\Models\Faculty;
 use Illuminate\Support\Str;
 
 class MajorSeeder extends Seeder

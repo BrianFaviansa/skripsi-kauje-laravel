@@ -1,0 +1,179 @@
+services:
+  # ============================================
+  # Laravel Application with FrankenPHP & Octane
+  # ============================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: kauje-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    environment:
+      - APP_NAME=${APP_NAME:-Kauje Laravel}
+      - APP_ENV=${APP_ENV:-production}
+      - APP_DEBUG=${APP_DEBUG:-false}
+      - APP_KEY=${APP_KEY}
+      - APP_URL=${APP_URL:-http://localhost:8000}
+      - DB_CONNECTION=pgsql
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_DATABASE=${DB_DATABASE:-kauje_db_laravel}
+      - DB_USERNAME=${DB_USERNAME:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-secret}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CACHE_STORE=redis
+      - SESSION_DRIVER=redis
+      - QUEUE_CONNECTION=redis
+      - OCTANE_SERVER=frankenphp
+      - OCTANE_WORKERS=${OCTANE_WORKERS:-auto}
+      - OCTANE_MAX_REQUESTS=${OCTANE_MAX_REQUESTS:-1000}
+      - LOG_CHANNEL=stack
+      - LOG_LEVEL=${LOG_LEVEL:-error}
+    volumes:
+      - app-storage:/app/storage/app
+      - app-logs:/app/storage/logs
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - kauje-network
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/up"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # ============================================
+  # Queue Worker (Optional - uncomment if needed)
+  # ============================================
+  # queue:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #     target: production
+  #   container_name: kauje-queue
+  #   restart: unless-stopped
+  #   command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--max-time=3600"]
+  #   environment:
+  #     - APP_ENV=${APP_ENV:-production}
+  #     - APP_KEY=${APP_KEY}
+  #     - DB_CONNECTION=pgsql
+  #     - DB_HOST=db
+  #     - DB_PORT=5432
+  #     - DB_DATABASE=${DB_DATABASE:-kauje_db_laravel}
+  #     - DB_USERNAME=${DB_USERNAME:-postgres}
+  #     - DB_PASSWORD=${DB_PASSWORD:-secret}
+  #     - REDIS_HOST=redis
+  #     - QUEUE_CONNECTION=redis
+  #   depends_on:
+  #     - app
+  #   networks:
+  #     - kauje-network
+
+  # ============================================
+  # PostgreSQL Database
+  # ============================================
+  db:
+    image: postgres:16-alpine
+    container_name: kauje-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-kauje_db_laravel}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USERNAME:-postgres} -d ${DB_DATABASE:-skripsi_kauje_laravel}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kauje-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================
+  # Redis for Cache, Session & Queue
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: kauje-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kauje-network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "2"
+
+# ============================================
+# Volumes - Persistent Data Storage
+# ============================================
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  app-storage:
+    driver: local
+  app-logs:
+    driver: local
+
+# ============================================
+# Networks
+# ============================================
+networks:
+  kauje-network:
+    driver: bridge

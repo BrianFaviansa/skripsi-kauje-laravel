@@ -1,0 +1,66 @@
+# ============================================
+# Development Dockerfile for Laravel Octane with FrankenPHP
+# ============================================
+FROM dunglas/frankenphp:latest-php8.3
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libpq-dev \
+    libzip-dev \
+    zip \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN install-php-extensions \
+    pdo_pgsql \
+    pgsql \
+    pcntl \
+    redis \
+    zip \
+    gd \
+    intl \
+    opcache
+
+# Install Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Set working directory
+WORKDIR /app
+
+# Set environment variables for development
+ENV SERVER_NAME=":8000"
+ENV APP_ENV=local
+ENV APP_DEBUG=true
+
+# Copy application code
+COPY . .
+
+# Install dependencies
+RUN composer install --optimize-autoloader
+
+# Create necessary directories
+RUN mkdir -p storage/framework/cache/data \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache
+
+# Set permissions
+RUN chown -R www-data:www-data storage bootstrap/cache
+RUN chmod -R 775 storage bootstrap/cache
+
+# Copy startup script
+COPY docker/start-dev.sh /usr/local/bin/start-dev.sh
+RUN chmod +x /usr/local/bin/start-dev.sh
+
+# Expose port
+EXPOSE 8000
+
+# Start command for development (with watch mode)
+ENTRYPOINT ["/usr/local/bin/start-dev.sh"]

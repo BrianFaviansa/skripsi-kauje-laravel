@@ -1,0 +1,52 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Development files
+.env
+.env.local
+.env.*.local
+.editorconfig
+.styleci.yml
+phpunit.xml
+phpstan.neon
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Dependencies (will be installed in Docker)
+/vendor
+/node_modules
+
+# Build files
+/public/hot
+/public/build
+/public/storage
+
+# Storage (mounted as volumes)
+/storage/*.key
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+.docker
+
+# Testing
+/coverage
+/.phpunit.result.cache
+/tests
+
+# K6 load tests
+/k6
+
+# Documentation
+README.md
+CHANGELOG.md
