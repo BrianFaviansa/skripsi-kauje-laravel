@@ -1,7 +1,7 @@
 # ============================================
 # Stage 1: Base image with PHP extensions
 # ============================================
-FROM dunglas/frankenphp:latest-php8.3 AS base
+FROM php:8.3-cli AS base
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -12,20 +12,28 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libpq-dev \
     libzip-dev \
+    libcurl4-openssl-dev \
+    libssl-dev \
     zip \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN install-php-extensions \
+RUN docker-php-ext-install \
     pdo_pgsql \
     pgsql \
     pcntl \
-    redis \
     zip \
     gd \
     intl \
-    opcache
+    opcache \
+    sockets
+
+# Install Swoole
+RUN pecl install swoole && docker-php-ext-enable swoole
+
+# Install Redis extension
+RUN pecl install redis && docker-php-ext-enable redis
 
 # ============================================
 # Stage 2: Composer dependencies
@@ -56,7 +64,7 @@ FROM base AS production
 # Labels for image metadata
 LABEL maintainer="Kauje Team"
 LABEL version="1.0"
-LABEL description="Laravel application with Octane and FrankenPHP"
+LABEL description="Laravel application with Octane and Swoole"
 
 # Set working directory
 WORKDIR /app
@@ -70,8 +78,6 @@ RUN { \
     echo 'opcache.validate_timestamps=0'; \
     echo 'opcache.save_comments=1'; \
     echo 'opcache.fast_shutdown=1'; \
-    echo 'opcache.jit=1255'; \
-    echo 'opcache.jit_buffer_size=128M'; \
     } > /usr/local/etc/php/conf.d/opcache-production.ini
 
 # Configure PHP for production
@@ -86,9 +92,6 @@ RUN { \
     echo 'error_log=/app/storage/logs/php_errors.log'; \
     } > /usr/local/etc/php/conf.d/php-production.ini
 
-# Set environment variables
-ENV SERVER_NAME=":8000"
-
 # Copy application code
 COPY . .
 
@@ -100,22 +103,6 @@ COPY --from=composer /usr/bin/composer /usr/bin/composer
 
 # Generate optimized autoload
 RUN composer dump-autoload --optimize --no-dev
-
-# Create FrankenPHP worker file for Octane
-RUN echo '<?php' > public/frankenphp-worker.php && \
-    echo '' >> public/frankenphp-worker.php && \
-    echo 'ignore_user_abort(true);' >> public/frankenphp-worker.php && \
-    echo '' >> public/frankenphp-worker.php && \
-    echo '// Boot the Laravel application' >> public/frankenphp-worker.php && \
-    echo '$app = require __DIR__."/../bootstrap/app.php";' >> public/frankenphp-worker.php && \
-    echo '' >> public/frankenphp-worker.php && \
-    echo '$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);' >> public/frankenphp-worker.php && \
-    echo '' >> public/frankenphp-worker.php && \
-    echo 'while ($request = \frankenphp_handle_request()) {' >> public/frankenphp-worker.php && \
-    echo '    $response = $kernel->handle($request);' >> public/frankenphp-worker.php && \
-    echo '    $response->send();' >> public/frankenphp-worker.php && \
-    echo '    $kernel->terminate($request, $response);' >> public/frankenphp-worker.php && \
-    echo '}' >> public/frankenphp-worker.php
 
 # Create necessary directories
 RUN mkdir -p storage/framework/cache/data \
