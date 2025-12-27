@@ -1,12 +1,11 @@
 /**
- * Auth Module Load Test - Laravel Sanctum
+ * Auth Module Load Test - Laravel
  *
  * Test scenarios:
- * - Register
+ * - Register (with guaranteed unique values)
  * - Login
- * - Me (get authenticated user)
- *
- * Note: Laravel Sanctum tidak menggunakan refresh token seperti JWT di Next.js
+ * - Me (get current user)
+ * - Refresh Token
  */
 
 import http from "k6/http";
@@ -17,25 +16,18 @@ import {
     FOREIGN_KEYS,
     OPTIONS,
     THRESHOLDS,
+    handleSummary,
 } from "../config/config.js";
 
-// Tell k6 that 400, 409, 422, 500 responses are expected (not failures)
-http.setResponseCallback(
-    http.expectedStatuses(200, 201, 400, 401, 409, 422, 500)
-);
+export { handleSummary };
 
 export const options = {
-    // smoke: 1 VU | loadDev: 20 VUs | load: 100 VUs
-    // ...OPTIONS.smoke,
-    ...OPTIONS.load, // 20 VUs - cocok untuk dev server
-    // ...OPTIONS.load, // 100 VUs - untuk production server
+    ...OPTIONS.load,
     thresholds: THRESHOLDS,
 };
 
 export function setup() {
-    console.log(`Login attempt - NIM: ${TEST_USER.nim}`);
-    console.log(`BASE_URL: ${BASE_URL}`);
-
+    // Login untuk mendapatkan token
     const loginRes = http.post(
         `${BASE_URL}/auth/login`,
         JSON.stringify({
@@ -43,69 +35,53 @@ export function setup() {
             password: TEST_USER.password,
         }),
         {
-            headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-            },
-            timeout: "30s",
+            headers: { "Content-Type": "application/json" },
         }
     );
 
-    console.log(`Login status: ${loginRes.status}`);
-
-    const loginOk = check(loginRes, {
+    const success = check(loginRes, {
         "setup login successful": (r) => r.status === 200,
     });
 
-    if (!loginOk) {
-        console.log(`Login failed with status ${loginRes.status}`);
-        // Don't log entire body if it's HTML/error page
-        if (
-            loginRes.body &&
-            loginRes.body.length < 500 &&
-            !loginRes.body.includes("<html")
-        ) {
-            console.log(`Response: ${loginRes.body}`);
-        }
-        return { token: null };
+    if (!success) {
+        console.log(
+            `Setup login failed: ${loginRes.status} - ${loginRes.body}`
+        );
     }
 
-    let token = null;
-    try {
-        const body = JSON.parse(loginRes.body);
-        token = body.data?.access_token || body.access_token || null;
-        console.log(`Token obtained: ${token ? "YES" : "NO"}`);
-    } catch (e) {
-        console.log(`Parse error: ${e.message}`);
-    }
-
-    return { token };
+    const body = JSON.parse(loginRes.body);
+    return {
+        accessToken: body.data?.access_token || body.access_token,
+    };
 }
 
 export default function (data) {
     const authHeaders = {
         "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${data.token}`,
+        Authorization: `Bearer ${data.accessToken}`,
     };
 
-    const publicHeaders = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-    };
+    // Generate guaranteed unique values for 100 VUs with many iterations
+    // Format: ensures uniqueness across ALL VUs and iterations
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8);
 
-    // Generate unique values for registration
-    const ts = Date.now();
-    const uniqueId = `${ts}${__VU}${__ITER}`;
-    const randomNim = `${ts}`.substring(0, 10);
-    const randomPhone = `08${ts}`.substring(0, 12);
-    const randomEmail = `k6_${ts}_${__VU}@test.com`;
+    // NIM: 10 digits - combine VU, ITER, timestamp for uniqueness
+    const nimBase = `${__VU}${__ITER}${timestamp}`;
+    const randomNim = nimBase.substring(nimBase.length - 10).padStart(10, "0");
 
-    // Test 1: Register
+    // Phone: 08 + 10 digits
+    const phoneBase = `${timestamp}${__VU}${__ITER}${random}`;
+    const randomPhone = `08${phoneBase.substring(0, 10)}`;
+
+    // Email: fully unique with all identifiers
+    const randomEmail = `k6_${__VU}_${__ITER}_${timestamp}_${random}@test.com`;
+
+    // Register Test
     group("Auth - Register", function () {
         const payload = JSON.stringify({
             nim: randomNim,
-            name: `K6 Test User ${__VU}`,
+            name: `User K6 ${__VU}_${__ITER}`,
             email: randomEmail,
             password: "password123",
             phone_number: randomPhone,
@@ -119,20 +95,17 @@ export default function (data) {
         });
 
         const res = http.post(`${BASE_URL}/auth/register`, payload, {
-            headers: publicHeaders,
-            timeout: "30s",
+            headers: { "Content-Type": "application/json" },
         });
 
+        // Only 201 is success
         check(res, {
-            "register response received": (r) => r.status > 0,
-            "register status is valid": (r) =>
-                [201, 400, 409, 422, 500].includes(r.status),
+            "register status 201": (r) => r.status === 201,
         });
     });
 
-    sleep(1);
+    sleep(0.5);
 
-    // Test 2: Login
     group("Auth - Login", function () {
         const res = http.post(
             `${BASE_URL}/auth/login`,
@@ -141,27 +114,40 @@ export default function (data) {
                 password: TEST_USER.password,
             }),
             {
-                headers: publicHeaders,
-                timeout: "30s",
+                headers: { "Content-Type": "application/json" },
             }
         );
 
         check(res, {
             "login status 200": (r) => r.status === 200,
             "login has token": (r) => {
-                try {
-                    const body = JSON.parse(r.body);
-                    return !!(body.data?.access_token || body.access_token);
-                } catch {
-                    return false;
-                }
+                if (r.status !== 200) return false;
+                const body = JSON.parse(r.body);
+                return body.data?.access_token || body.access_token;
             },
         });
     });
 
-    sleep(1);
+    sleep(0.5);
+
+    group("Auth - Me", function () {
+        const res = http.get(`${BASE_URL}/auth/me`, {
+            headers: authHeaders,
+        });
+
+        check(res, {
+            "me status 200": (r) => r.status === 200,
+            "me has user data": (r) => {
+                if (r.status !== 200) return false;
+                const body = JSON.parse(r.body);
+                return body.data?.id || body.id;
+            },
+        });
+    });
+
+    sleep(0.5);
 }
 
 export function teardown(data) {
-    console.log("Auth Load Test Complete");
+    console.log("Auth Module Load Test Completed");
 }

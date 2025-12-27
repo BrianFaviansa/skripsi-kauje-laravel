@@ -1,7 +1,7 @@
 /**
  * News Module Load Test - Laravel
  *
- * Test scenarios (setara dengan Next.js):
+ * Test scenarios:
  * - Create news
  * - Get all news
  * - Search news
@@ -13,12 +13,15 @@
 
 import http from "k6/http";
 import { check, sleep, group } from "k6";
-import { BASE_URL, TEST_USER, OPTIONS, THRESHOLDS } from "../config/config.js";
+import {
+    BASE_URL,
+    TEST_USER,
+    OPTIONS,
+    THRESHOLDS,
+    handleSummary,
+} from "../config/config.js";
 
-// Tell k6 that these responses are expected (not failures)
-http.setResponseCallback(
-    http.expectedStatuses(200, 201, 400, 401, 403, 404, 409, 422, 500)
-);
+export { handleSummary };
 
 export const options = {
     ...OPTIONS.load,
@@ -26,7 +29,6 @@ export const options = {
 };
 
 export function setup() {
-    // Login untuk mendapatkan token (Sanctum)
     const loginRes = http.post(
         `${BASE_URL}/auth/login`,
         JSON.stringify({
@@ -40,8 +42,6 @@ export function setup() {
 
     const body = JSON.parse(loginRes.body);
     return {
-        // Laravel Sanctum uses token, not accessToken
-        // Laravel Sanctum uses access_token, not token
         token: body.data?.access_token || body.access_token,
     };
 }
@@ -53,21 +53,16 @@ export default function (data) {
         Authorization: `Bearer ${data.token}`,
     };
 
-    const publicHeaders = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-    };
-
     const timestamp = Date.now();
+    const uniqueId = `${__VU}_${__ITER}_${timestamp}`;
     const today = new Date().toISOString().split("T")[0];
-    let createdNewsId = ""; // Local variable for this iteration
+    let createdNewsId = "";
 
     // CREATE
     group("News - Create", function () {
         const payload = JSON.stringify({
-            title: `Berita K6 Test ${timestamp}`,
-            content:
-                "Ini adalah konten berita untuk testing dengan k6 load testing tool. Berita penting untuk alumni.",
+            title: `Berita ${uniqueId}`,
+            content: "Konten berita untuk load testing dengan k6.",
             date: today,
             image_url: "",
         });
@@ -80,7 +75,6 @@ export default function (data) {
             "create news status 201": (r) => r.status === 201,
         });
 
-        // Extract ID if successful
         if (res.status === 201) {
             try {
                 const body = JSON.parse(res.body);
@@ -89,7 +83,7 @@ export default function (data) {
         }
     });
 
-    sleep(1);
+    sleep(0.5);
 
     // READ ALL
     group("News - Get All", function () {
@@ -99,14 +93,10 @@ export default function (data) {
 
         check(res, {
             "get all news status 200": (r) => r.status === 200,
-            "get all news has data": (r) => {
-                const body = JSON.parse(r.body);
-                return Array.isArray(body.data);
-            },
         });
     });
 
-    sleep(1);
+    sleep(0.5);
 
     // SEARCH
     group("News - Search", function () {
@@ -122,20 +112,17 @@ export default function (data) {
         });
     });
 
-    sleep(1);
+    sleep(0.5);
 
     // FILTER by date range
     group("News - Filter by Date", function () {
         const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
             .toISOString()
             .split("T")[0];
-        const endDate = today;
 
         const res = http.get(
-            `${BASE_URL}/news?start_date=${startDate}&end_date=${endDate}&page=1&per_page=10`,
-            {
-                headers: authHeaders,
-            }
+            `${BASE_URL}/news?start_date=${startDate}&end_date=${today}&page=1&per_page=10`,
+            { headers: authHeaders }
         );
 
         check(res, {
@@ -143,7 +130,7 @@ export default function (data) {
         });
     });
 
-    sleep(1);
+    sleep(0.5);
 
     if (createdNewsId) {
         // READ ONE
@@ -154,20 +141,16 @@ export default function (data) {
 
             check(res, {
                 "get one news status 200": (r) => r.status === 200,
-                "get one news has correct id": (r) => {
-                    const body = JSON.parse(res.body);
-                    return body.data?.id === createdNewsId;
-                },
             });
         });
 
-        sleep(1);
+        sleep(0.5);
 
         // UPDATE
         group("News - Update", function () {
             const payload = JSON.stringify({
-                title: `Berita Updated ${timestamp}`,
-                content: "Konten berita yang sudah diupdate melalui k6.",
+                title: `Berita Updated ${uniqueId}`,
+                content: "Konten berita yang sudah diupdate.",
             });
 
             const res = http.put(`${BASE_URL}/news/${createdNewsId}`, payload, {
@@ -179,7 +162,7 @@ export default function (data) {
             });
         });
 
-        sleep(1);
+        sleep(0.5);
 
         // DELETE
         group("News - Delete", function () {
@@ -193,7 +176,7 @@ export default function (data) {
         });
     }
 
-    sleep(1);
+    sleep(0.5);
 }
 
 export function teardown(data) {

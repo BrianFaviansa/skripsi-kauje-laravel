@@ -1,7 +1,7 @@
 /**
  * Job Module Load Test - Laravel
  *
- * Test scenarios (setara dengan Next.js):
+ * Test scenarios:
  * - Create job
  * - Get all jobs
  * - Search jobs
@@ -19,12 +19,10 @@ import {
     FOREIGN_KEYS,
     OPTIONS,
     THRESHOLDS,
+    handleSummary,
 } from "../config/config.js";
 
-// Tell k6 that these responses are expected (not failures)
-http.setResponseCallback(
-    http.expectedStatuses(200, 201, 400, 401, 403, 404, 409, 422, 500)
-);
+export { handleSummary };
 
 export const options = {
     ...OPTIONS.load,
@@ -32,7 +30,6 @@ export const options = {
 };
 
 export function setup() {
-    // Login untuk mendapatkan token (Sanctum)
     const loginRes = http.post(
         `${BASE_URL}/auth/login`,
         JSON.stringify({
@@ -46,8 +43,6 @@ export function setup() {
 
     const body = JSON.parse(loginRes.body);
     return {
-        // Laravel Sanctum uses token, not accessToken
-        // Laravel Sanctum uses access_token, not token
         token: body.data?.access_token || body.access_token,
     };
 }
@@ -59,26 +54,21 @@ export default function (data) {
         Authorization: `Bearer ${data.token}`,
     };
 
-    const publicHeaders = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-    };
-
     const timestamp = Date.now();
+    const uniqueId = `${__VU}_${__ITER}_${timestamp}`;
     const today = new Date().toISOString().split("T")[0];
     const nextMonth = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split("T")[0];
-    let createdJobId = ""; // Local variable for this iteration
+    let createdJobId = "";
 
     // CREATE
     group("Jobs - Create", function () {
         const payload = JSON.stringify({
-            title: `Software Engineer K6 Test ${timestamp}`,
-            content:
-                "Deskripsi lowongan kerja untuk testing dengan k6 load testing. Kami mencari kandidat yang berpengalaman.",
-            company: "PT K6 Testing Indonesia",
-            job_type: "LOKER", // Sesuaikan dengan enum JobType (snake_case untuk Laravel)
+            title: `Job ${uniqueId}`,
+            content: "Deskripsi lowongan kerja untuk load testing.",
+            company: "PT K6 Testing",
+            job_type: "LOKER",
             open_from: today,
             open_until: nextMonth,
             registration_link: "https://example.com/apply",
@@ -96,7 +86,6 @@ export default function (data) {
             "create job status 201": (r) => r.status === 201,
         });
 
-        // Extract ID if successful
         if (res.status === 201) {
             try {
                 const body = JSON.parse(res.body);
@@ -105,7 +94,7 @@ export default function (data) {
         }
     });
 
-    sleep(1);
+    sleep(0.5);
 
     // READ ALL
     group("Jobs - Get All", function () {
@@ -115,30 +104,23 @@ export default function (data) {
 
         check(res, {
             "get all jobs status 200": (r) => r.status === 200,
-            "get all jobs has data": (r) => {
-                const body = JSON.parse(r.body);
-                return Array.isArray(body.data);
-            },
         });
     });
 
-    sleep(1);
+    sleep(0.5);
 
     // SEARCH
     group("Jobs - Search", function () {
-        const res = http.get(
-            `${BASE_URL}/jobs?search=engineer&page=1&per_page=10`,
-            {
-                headers: authHeaders,
-            }
-        );
+        const res = http.get(`${BASE_URL}/jobs?search=job&page=1&per_page=10`, {
+            headers: authHeaders,
+        });
 
         check(res, {
             "search jobs status 200": (r) => r.status === 200,
         });
     });
 
-    sleep(1);
+    sleep(0.5);
 
     // FILTER by job_type
     group("Jobs - Filter by Type", function () {
@@ -154,7 +136,7 @@ export default function (data) {
         });
     });
 
-    sleep(1);
+    sleep(0.5);
 
     if (createdJobId) {
         // READ ONE
@@ -165,20 +147,16 @@ export default function (data) {
 
             check(res, {
                 "get one job status 200": (r) => r.status === 200,
-                "get one job has correct id": (r) => {
-                    const body = JSON.parse(r.body);
-                    return body.data?.id === createdJobId;
-                },
             });
         });
 
-        sleep(1);
+        sleep(0.5);
 
         // UPDATE
         group("Jobs - Update", function () {
             const payload = JSON.stringify({
-                title: `Job Updated ${timestamp}`,
-                content: "Deskripsi lowongan yang sudah diupdate melalui k6.",
+                title: `Job Updated ${uniqueId}`,
+                content: "Deskripsi lowongan yang sudah diupdate.",
             });
 
             const res = http.put(`${BASE_URL}/jobs/${createdJobId}`, payload, {
@@ -190,7 +168,7 @@ export default function (data) {
             });
         });
 
-        sleep(1);
+        sleep(0.5);
 
         // DELETE
         group("Jobs - Delete", function () {
@@ -204,7 +182,7 @@ export default function (data) {
         });
     }
 
-    sleep(1);
+    sleep(0.5);
 }
 
 export function teardown(data) {

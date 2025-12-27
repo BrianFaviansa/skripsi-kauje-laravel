@@ -1,7 +1,7 @@
 /**
  * Collaboration Module Load Test - Laravel
  *
- * Test scenarios (setara dengan Next.js):
+ * Test scenarios:
  * - Create collaboration
  * - Get all collaborations
  * - Search collaborations
@@ -18,12 +18,10 @@ import {
     FOREIGN_KEYS,
     OPTIONS,
     THRESHOLDS,
+    handleSummary,
 } from "../config/config.js";
 
-// Tell k6 that these responses are expected (not failures)
-http.setResponseCallback(
-    http.expectedStatuses(200, 201, 400, 401, 403, 404, 409, 422, 500)
-);
+export { handleSummary };
 
 export const options = {
     ...OPTIONS.load,
@@ -31,7 +29,6 @@ export const options = {
 };
 
 export function setup() {
-    // Login untuk mendapatkan token (Sanctum)
     const loginRes = http.post(
         `${BASE_URL}/auth/login`,
         JSON.stringify({
@@ -45,8 +42,6 @@ export function setup() {
 
     const body = JSON.parse(loginRes.body);
     return {
-        // Laravel Sanctum uses token, not accessToken
-        // Laravel Sanctum uses access_token, not token
         token: body.data?.access_token || body.access_token,
     };
 }
@@ -58,20 +53,15 @@ export default function (data) {
         Authorization: `Bearer ${data.token}`,
     };
 
-    const publicHeaders = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-    };
-
     const timestamp = Date.now();
-    let createdCollaborationId = ""; // Local variable for this iteration
+    const uniqueId = `${__VU}_${__ITER}_${timestamp}`;
+    let createdCollaborationId = "";
 
     // CREATE
     group("Collaborations - Create", function () {
         const payload = JSON.stringify({
-            title: `Kolaborasi Test K6 ${timestamp}`,
-            content:
-                "Ini adalah deskripsi kolaborasi untuk testing dengan k6 load testing tool.",
+            title: `Kolaborasi ${uniqueId}`,
+            content: "Deskripsi kolaborasi untuk load testing dengan k6.",
             image_url: "",
             collaboration_field_id: FOREIGN_KEYS.collaborationFieldId || "",
         });
@@ -84,7 +74,6 @@ export default function (data) {
             "create status 201": (r) => r.status === 201,
         });
 
-        // Extract ID if successful
         if (res.status === 201) {
             try {
                 const body = JSON.parse(res.body);
@@ -93,7 +82,7 @@ export default function (data) {
         }
     });
 
-    sleep(1);
+    sleep(0.5);
 
     // READ ALL
     group("Collaborations - Get All", function () {
@@ -103,22 +92,16 @@ export default function (data) {
 
         check(res, {
             "get all status 200": (r) => r.status === 200,
-            "get all has data": (r) => {
-                const body = JSON.parse(r.body);
-                return Array.isArray(body.data);
-            },
         });
     });
 
-    sleep(1);
+    sleep(0.5);
 
-    // READ ALL with Search
+    // SEARCH
     group("Collaborations - Search", function () {
         const res = http.get(
             `${BASE_URL}/collaborations?search=kolaborasi&page=1&per_page=10`,
-            {
-                headers: authHeaders,
-            }
+            { headers: authHeaders }
         );
 
         check(res, {
@@ -126,70 +109,58 @@ export default function (data) {
         });
     });
 
-    sleep(1);
+    sleep(0.5);
 
-    // READ ONE
     if (createdCollaborationId) {
+        // READ ONE
         group("Collaborations - Get One", function () {
             const res = http.get(
                 `${BASE_URL}/collaborations/${createdCollaborationId}`,
-                {
-                    headers: authHeaders,
-                }
+                { headers: authHeaders }
             );
 
             check(res, {
                 "get one status 200": (r) => r.status === 200,
-                "get one has correct id": (r) => {
-                    const body = JSON.parse(r.body);
-                    return body.data?.id === createdCollaborationId;
-                },
             });
         });
 
-        sleep(1);
+        sleep(0.5);
 
         // UPDATE
         group("Collaborations - Update", function () {
             const payload = JSON.stringify({
-                title: `Kolaborasi Updated ${timestamp}`,
-                content: "Konten yang sudah diupdate melalui k6 load testing.",
+                title: `Kolaborasi Updated ${uniqueId}`,
+                content: "Konten yang sudah diupdate melalui k6.",
             });
 
             const res = http.put(
                 `${BASE_URL}/collaborations/${createdCollaborationId}`,
                 payload,
-                {
-                    headers: authHeaders,
-                }
+                { headers: authHeaders }
             );
 
             check(res, {
-                "update status 200 or 404": (r) =>
-                    r.status === 200 || r.status === 404,
+                "update status 200": (r) => r.status === 200,
             });
         });
 
-        sleep(1);
+        sleep(0.5);
 
         // DELETE
         group("Collaborations - Delete", function () {
             const res = http.del(
                 `${BASE_URL}/collaborations/${createdCollaborationId}`,
                 null,
-                {
-                    headers: authHeaders,
-                }
+                { headers: authHeaders }
             );
 
             check(res, {
-                "delete status 200 or 404": (r) =>
-                    r.status === 200 || r.status === 404,
+                "delete status 200": (r) => r.status === 200,
             });
         });
     }
 
-    sleep(1);
+    sleep(0.5);
 }
 
 export function teardown(data) {

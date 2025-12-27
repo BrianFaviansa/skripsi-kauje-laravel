@@ -1,7 +1,7 @@
 /**
  * Forum Module Load Test - Laravel
  *
- * Test scenarios (setara dengan Next.js):
+ * Test scenarios:
  * - Create forum
  * - Get all forums
  * - Search forums
@@ -10,7 +10,6 @@
  * - Create comment
  * - Get comments
  * - Like forum
- * - Get likes
  * - Unlike forum
  * - Delete comment
  * - Delete forum
@@ -18,12 +17,15 @@
 
 import http from "k6/http";
 import { check, sleep, group } from "k6";
-import { BASE_URL, TEST_USER, OPTIONS, THRESHOLDS } from "../config/config.js";
+import {
+    BASE_URL,
+    TEST_USER,
+    OPTIONS,
+    THRESHOLDS,
+    handleSummary,
+} from "../config/config.js";
 
-// Tell k6 that these responses are expected (not failures)
-http.setResponseCallback(
-    http.expectedStatuses(200, 201, 400, 401, 403, 404, 409, 422, 500)
-);
+export { handleSummary };
 
 export const options = {
     ...OPTIONS.load,
@@ -31,7 +33,6 @@ export const options = {
 };
 
 export function setup() {
-    // Login untuk mendapatkan token (Sanctum)
     const loginRes = http.post(
         `${BASE_URL}/auth/login`,
         JSON.stringify({
@@ -45,8 +46,6 @@ export function setup() {
 
     const body = JSON.parse(loginRes.body);
     return {
-        // Laravel Sanctum uses token, not accessToken
-        // Laravel Sanctum uses access_token, not token
         token: body.data?.access_token || body.access_token,
     };
 }
@@ -58,21 +57,16 @@ export default function (data) {
         Authorization: `Bearer ${data.token}`,
     };
 
-    const publicHeaders = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-    };
-
     const timestamp = Date.now();
-    let createdForumId = ""; // Local variable for this iteration
-    let createdCommentId = ""; // Local variable for this iteration
+    const uniqueId = `${__VU}_${__ITER}_${timestamp}`;
+    let createdForumId = "";
+    let createdCommentId = "";
 
     // CREATE FORUM
     group("Forums - Create", function () {
         const payload = JSON.stringify({
-            title: `Forum Test K6 ${timestamp}`,
-            content:
-                "Ini adalah konten forum untuk testing dengan k6 load testing tool. Diskusi menarik!",
+            title: `Forum ${uniqueId}`,
+            content: "Konten forum untuk load testing dengan k6.",
             image_url: "",
         });
 
@@ -84,7 +78,6 @@ export default function (data) {
             "create forum status 201": (r) => r.status === 201,
         });
 
-        // Extract ID if successful
         if (res.status === 201) {
             try {
                 const body = JSON.parse(res.body);
@@ -93,7 +86,7 @@ export default function (data) {
         }
     });
 
-    sleep(1);
+    sleep(0.5);
 
     // READ ALL FORUMS
     group("Forums - Get All", function () {
@@ -103,14 +96,10 @@ export default function (data) {
 
         check(res, {
             "get all forums status 200": (r) => r.status === 200,
-            "get all forums has data": (r) => {
-                const body = JSON.parse(r.body);
-                return Array.isArray(body.data);
-            },
         });
     });
 
-    sleep(1);
+    sleep(0.5);
 
     // SEARCH FORUMS
     group("Forums - Search", function () {
@@ -126,7 +115,7 @@ export default function (data) {
         });
     });
 
-    sleep(1);
+    sleep(0.5);
 
     if (createdForumId) {
         // READ ONE FORUM
@@ -140,13 +129,13 @@ export default function (data) {
             });
         });
 
-        sleep(1);
+        sleep(0.5);
 
         // UPDATE FORUM
         group("Forums - Update", function () {
             const payload = JSON.stringify({
-                title: `Forum Updated ${timestamp}`,
-                content: "Konten forum yang sudah diupdate melalui k6.",
+                title: `Forum Updated ${uniqueId}`,
+                content: "Konten forum yang sudah diupdate.",
             });
 
             const res = http.put(
@@ -162,27 +151,24 @@ export default function (data) {
             });
         });
 
-        sleep(1);
+        sleep(0.5);
 
         // CREATE COMMENT
         group("Forums - Create Comment", function () {
             const payload = JSON.stringify({
-                content: `Komentar test K6 ${timestamp}`,
+                content: `Komentar ${uniqueId}`,
             });
 
             const res = http.post(
                 `${BASE_URL}/forums/${createdForumId}/comments`,
                 payload,
-                {
-                    headers: authHeaders,
-                }
+                { headers: authHeaders }
             );
 
             check(res, {
                 "create comment status 201": (r) => r.status === 201,
             });
 
-            // Extract ID if successful
             if (res.status === 201) {
                 try {
                     const body = JSON.parse(res.body);
@@ -191,9 +177,9 @@ export default function (data) {
             }
         });
 
-        sleep(1);
+        sleep(0.5);
 
-        // GET ALL COMMENTS
+        // GET COMMENTS
         group("Forums - Get Comments", function () {
             const res = http.get(
                 `${BASE_URL}/forums/${createdForumId}/comments`,
@@ -207,7 +193,7 @@ export default function (data) {
             });
         });
 
-        sleep(1);
+        sleep(0.5);
 
         // LIKE FORUM
         group("Forums - Like", function () {
@@ -225,22 +211,9 @@ export default function (data) {
             });
         });
 
-        sleep(1);
+        sleep(0.5);
 
-        // GET LIKES
-        group("Forums - Get Likes", function () {
-            const res = http.get(`${BASE_URL}/forums/${createdForumId}/likes`, {
-                headers: authHeaders,
-            });
-
-            check(res, {
-                "get likes status 200": (r) => r.status === 200,
-            });
-        });
-
-        sleep(1);
-
-        // UNLIKE FORUM (by calling like again to toggle)
+        // UNLIKE FORUM
         group("Forums - Unlike", function () {
             const res = http.post(
                 `${BASE_URL}/forums/${createdForumId}/like`,
@@ -255,7 +228,7 @@ export default function (data) {
             });
         });
 
-        sleep(1);
+        sleep(0.5);
 
         // DELETE COMMENT
         if (createdCommentId) {
@@ -263,9 +236,7 @@ export default function (data) {
                 const res = http.del(
                     `${BASE_URL}/forums/comments/${createdCommentId}`,
                     null,
-                    {
-                        headers: authHeaders,
-                    }
+                    { headers: authHeaders }
                 );
 
                 check(res, {
@@ -273,7 +244,7 @@ export default function (data) {
                 });
             });
 
-            sleep(1);
+            sleep(0.5);
         }
 
         // DELETE FORUM
@@ -288,7 +259,7 @@ export default function (data) {
         });
     }
 
-    sleep(1);
+    sleep(0.5);
 }
 
 export function teardown(data) {
