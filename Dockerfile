@@ -101,6 +101,22 @@ COPY --from=composer /usr/bin/composer /usr/bin/composer
 # Generate optimized autoload
 RUN composer dump-autoload --optimize --no-dev
 
+# Create FrankenPHP worker file for Octane
+RUN echo '<?php' > public/frankenphp-worker.php && \
+    echo '' >> public/frankenphp-worker.php && \
+    echo 'ignore_user_abort(true);' >> public/frankenphp-worker.php && \
+    echo '' >> public/frankenphp-worker.php && \
+    echo '// Boot the Laravel application' >> public/frankenphp-worker.php && \
+    echo '$app = require __DIR__."/../bootstrap/app.php";' >> public/frankenphp-worker.php && \
+    echo '' >> public/frankenphp-worker.php && \
+    echo '$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);' >> public/frankenphp-worker.php && \
+    echo '' >> public/frankenphp-worker.php && \
+    echo 'while ($request = \frankenphp_handle_request()) {' >> public/frankenphp-worker.php && \
+    echo '    $response = $kernel->handle($request);' >> public/frankenphp-worker.php && \
+    echo '    $response->send();' >> public/frankenphp-worker.php && \
+    echo '    $kernel->terminate($request, $response);' >> public/frankenphp-worker.php && \
+    echo '}' >> public/frankenphp-worker.php
+
 # Create necessary directories
 RUN mkdir -p storage/framework/cache/data \
     storage/framework/sessions \
