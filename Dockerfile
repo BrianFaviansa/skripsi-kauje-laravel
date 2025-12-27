@@ -96,6 +96,9 @@ COPY . .
 # Copy vendor from composer stage
 COPY --from=composer /app/vendor ./vendor
 
+# Copy composer binary for autoload generation
+COPY --from=composer /usr/bin/composer /usr/bin/composer
+
 # Generate optimized autoload
 RUN composer dump-autoload --optimize --no-dev
 
