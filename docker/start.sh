@@ -4,8 +4,38 @@ set -e
 echo "🚀 Starting Laravel Octane with Swoole..."
 echo "================================================"
 
+# Create .env file from environment variables if it doesn't exist
+if [ ! -f /app/.env ]; then
+    echo "📝 Creating .env file from environment variables..."
+    cat > /app/.env << EOF
+APP_NAME="${APP_NAME:-Laravel}"
+APP_ENV="${APP_ENV:-production}"
+APP_KEY="${APP_KEY:-}"
+APP_DEBUG="${APP_DEBUG:-false}"
+APP_URL="${APP_URL:-http://localhost}"
+
+DB_CONNECTION="${DB_CONNECTION:-pgsql}"
+DB_HOST="${DB_HOST:-db}"
+DB_PORT="${DB_PORT:-5432}"
+DB_DATABASE="${DB_DATABASE:-kauje_db}"
+DB_USERNAME="${DB_USERNAME:-postgres}"
+DB_PASSWORD="${DB_PASSWORD:-postgres}"
+
+REDIS_HOST="${REDIS_HOST:-redis}"
+REDIS_PORT="${REDIS_PORT:-6379}"
+
+CACHE_STORE="${CACHE_STORE:-redis}"
+SESSION_DRIVER="${SESSION_DRIVER:-redis}"
+QUEUE_CONNECTION="${QUEUE_CONNECTION:-redis}"
+
+LOG_CHANNEL="${LOG_CHANNEL:-stack}"
+LOG_LEVEL="${LOG_LEVEL:-error}"
+EOF
+    echo "✅ .env file created"
+fi
+
 # Generate APP_KEY if not set
-if [ -z "$APP_KEY" ]; then
+if [ -z "$APP_KEY" ] || ! grep -q "APP_KEY=base64" /app/.env; then
     echo "⚙️  Generating application key..."
     php artisan key:generate --force
 fi
