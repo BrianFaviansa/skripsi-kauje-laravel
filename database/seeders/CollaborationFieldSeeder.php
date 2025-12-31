@@ -23,9 +23,8 @@ class CollaborationFieldSeeder extends Seeder
         ];
 
         foreach ($fields as $field) {
-            CollaborationField::updateOrCreate(
-                ['name' => $field],
-                ['id' => Str::uuid()]
+            CollaborationField::firstOrCreate(
+                ['name' => $field]
             );
         }
     }

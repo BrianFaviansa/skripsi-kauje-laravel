@@ -27,9 +27,8 @@ class JobFieldSeeder extends Seeder
         ];
 
         foreach ($fields as $field) {
-            JobField::updateOrCreate(
-                ['name' => $field],
-                ['id' => Str::uuid()]
+            JobField::firstOrCreate(
+                ['name' => $field]
             );
         }
     }

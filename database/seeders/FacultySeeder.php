@@ -32,9 +32,8 @@ class FacultySeeder extends Seeder
         ];
 
         foreach ($faculties as $faculty) {
-            Faculty::updateOrCreate(
-                ['name' => $faculty],
-                ['id' => Str::uuid()]
+            Faculty::firstOrCreate(
+                ['name' => $faculty]
             );
         }
     }

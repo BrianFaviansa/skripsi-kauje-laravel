@@ -107,12 +107,8 @@ class MajorSeeder extends Seeder
                 continue;
             }
 
-            Major::updateOrCreate(
-                ['name' => $major['name']],
-                [
-                    'id' => Str::uuid(),
-                    'faculty_id' => $facultyMap[$major['faculty']],
-                ]
+            Major::firstOrCreate(
+                ['name' => $major['name'], 'faculty_id' => $facultyMap[$major['faculty']]]
             );
         }
     }

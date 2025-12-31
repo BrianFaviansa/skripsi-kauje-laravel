@@ -22,9 +22,8 @@ class ProvinceCitySeeder extends Seeder
         }
 
         foreach ($response->json('data') as $province) {
-            $provinceModel = Province::updateOrCreate(
-                ['name' => $province['name']],
-                ['id' => Str::uuid()]
+            $provinceModel = Province::firstOrCreate(
+                ['name' => $province['name']]
             );
 
             $cities = Http::withoutVerifying()->timeout(20)
@@ -32,12 +31,8 @@ class ProvinceCitySeeder extends Seeder
                 ->json('data');
 
             foreach ($cities as $city) {
-                City::updateOrCreate(
-                    ['name' => $city['name']],
-                    [
-                        'id' => Str::uuid(),
-                        'province_id' => $provinceModel->id,
-                    ]
+                City::firstOrCreate(
+                    ['name' => $city['name'], 'province_id' => $provinceModel->id]
                 );
             }
 
