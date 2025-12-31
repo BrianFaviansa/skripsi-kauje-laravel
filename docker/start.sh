@@ -37,7 +37,10 @@ fi
 # Generate APP_KEY if not set
 if [ -z "$APP_KEY" ] || ! grep -q "APP_KEY=base64" /app/.env; then
     echo "⚙️  Generating application key..."
+    php artisan config:clear 2>/dev/null || true
     php artisan key:generate --force
+    # Export the generated key to current environment
+    export APP_KEY=$(grep "^APP_KEY=" /app/.env | cut -d '=' -f2)
 fi
 
 # Wait for database to be ready (additional safety check)
@@ -65,8 +68,12 @@ if [ "$SEED_DATABASE" = "true" ]; then
     php artisan db:seed --force
 fi
 
-# Clear and cache config for production
+# Clear any stale cache first
 echo "⚙️  Optimizing application..."
+php artisan config:clear
+php artisan cache:clear 2>/dev/null || true
+
+# Now cache with correct APP_KEY
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
