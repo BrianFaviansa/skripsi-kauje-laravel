@@ -14,7 +14,7 @@ import {
     OPTIONS,
     THRESHOLDS,
     handleSummary,
-} from "../config/config.js";
+} from "./config.js";
 
 export { handleSummary };
 

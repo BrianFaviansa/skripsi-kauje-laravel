@@ -13,7 +13,7 @@ import {
     OPTIONS,
     THRESHOLDS,
     handleSummary,
-} from "../config/config.js";
+} from "./config.js";
 
 export { handleSummary };
 
@@ -23,19 +23,20 @@ export const options = {
 };
 
 export default function () {
-    // Generate guaranteed unique values for each VU and iteration
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 8);
+    const microRandom = Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, "0");
 
-    // NIM: 10 digits - combine VU, ITER, timestamp for uniqueness
-    const nimBase = `${__VU}${__ITER}${timestamp}`;
-    const randomNim = nimBase.substring(nimBase.length - 10).padStart(10, "0");
+    const randomNim = `${String(__VU).padStart(3, "0")}${String(
+        __ITER
+    ).padStart(3, "0")}${microRandom}`;
 
-    // Phone: 08 + 10 digits
-    const phoneBase = `${timestamp}${__VU}${__ITER}${random}`;
-    const randomPhone = `08${phoneBase.substring(0, 10)}`;
+    const randomPhone = `08${String(__VU).padStart(3, "0")}${String(
+        __ITER
+    ).padStart(3, "0")}${microRandom}`;
 
-    // Email: fully unique with all identifiers
     const randomEmail = `k6_${__VU}_${__ITER}_${timestamp}_${random}@test.com`;
 
     const payload = JSON.stringify({
@@ -57,7 +58,6 @@ export default function () {
         headers: { "Content-Type": "application/json" },
     });
 
-    // Only 201 is success
     const success = check(res, {
         "register status 201": (r) => r.status === 201,
         "register has user data": (r) => {
@@ -71,7 +71,6 @@ export default function () {
         },
     });
 
-    // Debug: log first few failures
     if (!success && __ITER < 3) {
         console.log(`Register failed - VU: ${__VU}, ITER: ${__ITER}`);
         console.log(`Status: ${res.status}, Body: ${res.body}`);

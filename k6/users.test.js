@@ -20,7 +20,7 @@ import {
     OPTIONS,
     THRESHOLDS,
     handleSummary,
-} from "../config/config.js";
+} from "./config/config.js";
 
 export { handleSummary };
 
@@ -29,7 +29,6 @@ export const options = {
     thresholds: THRESHOLDS,
 };
 
-// Global counter per VU to ensure uniqueness
 let vuCounter = 0;
 
 export function setup() {
@@ -65,26 +64,19 @@ export default function (data) {
         Authorization: `Bearer ${data.token}`,
     };
 
-    // Increment counter for this VU
     vuCounter++;
 
-    // GUARANTEED UNIQUE: VU (1-100) + Counter + Timestamp
-    // Each VU has its own counter that increments each iteration
-    // Format ensures NO collision even at exact same millisecond
     const ts = Date.now();
-    const vuPad = String(__VU).padStart(3, "0"); // 001-100
-    const counterPad = String(vuCounter).padStart(5, "0"); // 00001-99999
-    const tsLast = String(ts).slice(-6); // last 6 digits of timestamp
+    const vuPad = String(__VU).padStart(3, "0")
+    const counterPad = String(vuCounter).padStart(5, "0"); 
+    const tsLast = String(ts).slice(-6); 
 
-    // NIM: 10 digits = VU(3) + Counter(5) + ts(2)
     const randomNim = `${vuPad}${counterPad}${tsLast.slice(-2)}`;
 
-    // Phone: 12 digits = 08 + VU(2) + Counter(4) + ts(4)
     const randomPhone = `08${String(__VU).padStart(2, "0")}${String(
         vuCounter
     ).padStart(4, "0")}${tsLast.slice(-4)}`;
 
-    // Email: Completely unique
     const randomEmail = `v${__VU}c${vuCounter}t${ts}@k6.test`;
 
     const uniqueId = `${__VU}_${vuCounter}_${ts}`;
@@ -114,7 +106,6 @@ export default function (data) {
             headers: authHeaders,
         });
 
-        // Debug first few failures
         if (res.status !== 201 && vuCounter <= 2 && __VU <= 3) {
             console.log(
                 `VU${__VU} Counter${vuCounter}: ${res.status} - ${res.body}`

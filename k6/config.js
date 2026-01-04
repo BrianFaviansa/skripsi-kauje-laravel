@@ -1,30 +1,21 @@
 // K6 Load Test Configuration
-// Gunakan environment variable untuk override: k6 run -e API_URL=http://VPS_IP:8000/api
 
-export const BASE_URL = __ENV.API_URL || "http://103.47.227.38:8000/api";
+export const BASE_URL = __ENV.API_URL || "http://43.228.215.252:8000/api";
 
-// Test user credentials (sesuaikan dengan data di database)
+// Test user credentials 
 export const TEST_USER = {
     nim: "202410101014",
     password: "password123",
 };
 
-// Foreign Keys - UUIDs dari database kauje_db
-// Jalankan query ini untuk mendapatkan ID setelah seeding:
-// docker compose exec db psql -U postgres -d kauje_db -c "SELECT id FROM provinces LIMIT 1;"
-// docker compose exec db psql -U postgres -d kauje_db -c "SELECT id FROM cities LIMIT 1;"
-// docker compose exec db psql -U postgres -d kauje_db -c "SELECT id FROM faculties LIMIT 1;"
-// docker compose exec db psql -U postgres -d kauje_db -c "SELECT id FROM majors LIMIT 1;"
-// docker compose exec db psql -U postgres -d kauje_db -c "SELECT id FROM job_fields LIMIT 1;"
-// docker compose exec db psql -U postgres -d kauje_db -c "SELECT id FROM collaboration_fields LIMIT 1;"
 export const FOREIGN_KEYS = {
-    provinceId: "REPLACE_WITH_PROVINCE_UUID",
-    cityId: "REPLACE_WITH_CITY_UUID",
-    facultyId: "REPLACE_WITH_FACULTY_UUID",
-    majorId: "REPLACE_WITH_MAJOR_UUID",
-    roleId: null, // optional
-    jobFieldId: "REPLACE_WITH_JOB_FIELD_UUID",
-    collaborationFieldId: "REPLACE_WITH_COLLABORATION_FIELD_UUID",
+    provinceId: "019b783f-b33a-7004-91da-c62a2b33096d",
+    cityId: "019b783f-b345-70a7-99ad-f380e7eb054b",
+    facultyId: "019b783f-b303-71e7-bdb7-a8468324ee67",
+    majorId: "019b7840-0185-71a6-8b04-f7c56ea1b1d0",
+    roleId: "019b783f-b2ff-7314-b244-83cbc5f145c1",
+    jobFieldId: "019b783f-b313-7337-afa0-91be3a383bef",
+    collaborationFieldId: "019b783f-b31e-72a5-9621-d262b371772a",
 };
 
 // Load test options
@@ -34,25 +25,25 @@ export const OPTIONS = {
         vus: 1,
         duration: "30s",
     },
-    // Load test - gradual ramp up to 100 VUs (3 minutes total)
+    // Load test - 100 VUs, 3 minutes total
     load: {
         stages: [
-            { duration: "30s", target: 50 }, // ramp up to 50 users
-            { duration: "30s", target: 100 }, // ramp up to 100 users
-            { duration: "1m", target: 100 }, // stay at 100 users (steady state)
-            { duration: "30s", target: 50 }, // ramp down to 50 users
-            { duration: "30s", target: 0 }, // ramp down to 0
+            { duration: "30s", target: 50 },
+            { duration: "30s", target: 100 },
+            { duration: "1m", target: 100 },
+            { duration: "30s", target: 50 },
+            { duration: "30s", target: 0 },
         ],
     },
 };
 
 // Thresholds for performance
 export const THRESHOLDS = {
-    http_req_duration: ["p(95)<1000"], // p95 latency < 1 seconds
-    http_req_failed: ["rate<0.10"], // Success rate > 90%
+    http_req_duration: ["p(95)<1000"], 
+    http_req_failed: ["rate<0.10"], 
 };
 
-// Custom summary handler - displays key metrics
+// Custom summary handler 
 export function handleSummary(data) {
     const metrics = data.metrics;
 
@@ -119,7 +110,7 @@ export const SCENARIOS = {
     },
 };
 
-// Sleep durations (in seconds)
+// Sleep durations
 export const SLEEP = {
     short: 0.5,
     medium: 1,
