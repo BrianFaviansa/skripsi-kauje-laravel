@@ -1,18 +1,3 @@
-/**
- * Product Module Load Test - Laravel
- *
- * Test scenarios:
- * - Create product (PRODUK)
- * - Create jasa (JASA)
- * - Get all products
- * - Search products
- * - Filter by category
- * - Filter by price range
- * - Get one product
- * - Update product
- * - Delete product
- */
-
 import http from "k6/http";
 import { check, sleep, group } from "k6";
 import {
@@ -85,7 +70,7 @@ export default function (data) {
         }
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // CREATE JASA type
     group("Products - Create Jasa", function () {
@@ -106,7 +91,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // READ ALL
     group("Products - Get All", function () {
@@ -119,7 +104,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // SEARCH
     group("Products - Search", function () {
@@ -133,7 +118,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // FILTER by category
     group("Products - Filter by Category", function () {
@@ -147,7 +132,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // FILTER by price range
     group("Products - Filter by Price Range", function () {
@@ -161,7 +146,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     if (createdProductId) {
         // READ ONE
@@ -175,7 +160,7 @@ export default function (data) {
             });
         });
 
-        sleep(0.5);
+        sleep(1);
 
         // UPDATE
         group("Products - Update", function () {
@@ -198,7 +183,7 @@ export default function (data) {
             });
         });
 
-        sleep(0.5);
+        sleep(1);
 
         // DELETE
         group("Products - Delete", function () {
@@ -216,7 +201,7 @@ export default function (data) {
         });
     }
 
-    sleep(0.5);
+    sleep(1);
 }
 
 export function teardown(data) {

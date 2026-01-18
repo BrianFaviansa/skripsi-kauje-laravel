@@ -1,11 +1,3 @@
-/**
- * Login Module Load Test - Laravel
- *
- * Test scenarios:
- * - Login
- * - Me (get current user)
- */
-
 import http from "k6/http";
 import { check, sleep, group } from "k6";
 import {
@@ -24,7 +16,6 @@ export const options = {
 };
 
 export function setup() {
-    // Login untuk mendapatkan token
     const loginRes = http.post(
         `${BASE_URL}/auth/login`,
         JSON.stringify({
@@ -85,7 +76,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // Me Test
     group("Me", function () {
@@ -107,7 +98,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 }
 
 export function teardown() {

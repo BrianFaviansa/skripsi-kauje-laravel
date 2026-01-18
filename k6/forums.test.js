@@ -1,20 +1,3 @@
-/**
- * Forum Module Load Test - Laravel
- *
- * Test scenarios:
- * - Create forum
- * - Get all forums
- * - Search forums
- * - Get one forum
- * - Update forum
- * - Create comment
- * - Get comments
- * - Like forum
- * - Unlike forum
- * - Delete comment
- * - Delete forum
- */
-
 import http from "k6/http";
 import { check, sleep, group } from "k6";
 import {
@@ -86,7 +69,7 @@ export default function (data) {
         }
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // READ ALL FORUMS
     group("Forums - Get All", function () {
@@ -99,7 +82,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // SEARCH FORUMS
     group("Forums - Search", function () {
@@ -115,7 +98,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     if (createdForumId) {
         // READ ONE FORUM
@@ -129,7 +112,7 @@ export default function (data) {
             });
         });
 
-        sleep(0.5);
+        sleep(1);
 
         // UPDATE FORUM
         group("Forums - Update", function () {
@@ -151,7 +134,7 @@ export default function (data) {
             });
         });
 
-        sleep(0.5);
+        sleep(1);
 
         // CREATE COMMENT
         group("Forums - Create Comment", function () {
@@ -177,7 +160,7 @@ export default function (data) {
             }
         });
 
-        sleep(0.5);
+        sleep(1);
 
         // GET COMMENTS
         group("Forums - Get Comments", function () {
@@ -193,7 +176,7 @@ export default function (data) {
             });
         });
 
-        sleep(0.5);
+        sleep(1);
 
         // LIKE FORUM
         group("Forums - Like", function () {
@@ -211,7 +194,7 @@ export default function (data) {
             });
         });
 
-        sleep(0.5);
+        sleep(1);
 
         // UNLIKE FORUM
         group("Forums - Unlike", function () {
@@ -228,7 +211,7 @@ export default function (data) {
             });
         });
 
-        sleep(0.5);
+        sleep(1);
 
         // DELETE COMMENT
         if (createdCommentId) {
@@ -244,7 +227,7 @@ export default function (data) {
                 });
             });
 
-            sleep(0.5);
+            sleep(1);
         }
 
         // DELETE FORUM
@@ -259,7 +242,7 @@ export default function (data) {
         });
     }
 
-    sleep(0.5);
+    sleep(1);
 }
 
 export function teardown(data) {

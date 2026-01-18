@@ -1,8 +1,5 @@
-// K6 Load Test Configuration
-
 export const BASE_URL = __ENV.API_URL || "http://43.228.215.252:8000/api";
 
-// Test user credentials 
 export const TEST_USER = {
     nim: "202410101014",
     password: "password123",
@@ -18,14 +15,11 @@ export const FOREIGN_KEYS = {
     collaborationFieldId: "019b783f-b31e-72a5-9621-d262b371772a",
 };
 
-// Load test options
 export const OPTIONS = {
-    // Smoke test - minimal load to verify system works
     smoke: {
         vus: 1,
         duration: "30s",
     },
-    // Load test - 100 VUs, 3 minutes total
     load: {
         stages: [
             { duration: "30s", target: 50 },
@@ -37,25 +31,20 @@ export const OPTIONS = {
     },
 };
 
-// Thresholds for performance
 export const THRESHOLDS = {
     http_req_duration: ["p(95)<1000"], 
     http_req_failed: ["rate<0.10"], 
 };
 
-// Custom summary handler 
 export function handleSummary(data) {
     const metrics = data.metrics;
 
-    // Response Time (avg)
     const avgResponseTime =
         metrics.http_req_duration?.values?.avg?.toFixed(2) || "N/A";
 
-    // P95 Latency
     const p95Latency =
         metrics.http_req_duration?.values?.["p(95)"]?.toFixed(2) || "N/A";
 
-    // Throughput (requests per second)
     const totalRequests = metrics.http_reqs?.values?.count || 0;
     const totalDuration =
         (metrics.iteration_duration?.values?.count *
@@ -66,7 +55,6 @@ export function handleSummary(data) {
         (data.state.testRunDurationMs / 1000)
     ).toFixed(2);
 
-    // Success Rate
     const failedRate = metrics.http_req_failed?.values?.rate || 0;
     const successRate = ((1 - failedRate) * 100).toFixed(2);
 
@@ -98,7 +86,6 @@ export function handleSummary(data) {
 
 import { textSummary } from "https://jslib.k6.io/k6-summary/0.0.1/index.js";
 
-// Legacy exports for backward compatibility
 export const DEFAULT_THRESHOLDS = THRESHOLDS;
 
 export const SCENARIOS = {
@@ -110,12 +97,10 @@ export const SCENARIOS = {
     },
 };
 
-// Sleep durations
 export const SLEEP = {
     short: 0.5,
     medium: 1,
     long: 2,
 };
 
-// HTTP request timeout
 export const TIMEOUT = "30s";

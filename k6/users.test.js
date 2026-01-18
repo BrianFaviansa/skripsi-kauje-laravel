@@ -1,16 +1,3 @@
-/**
- * User Module Load Test - Laravel
- *
- * Test scenarios:
- * - Create user (Admin only)
- * - Get all users
- * - Search users
- * - Filter by faculty
- * - Filter by enrollment year
- * - Get one user
- * - Update user
- */
-
 import http from "k6/http";
 import { check, sleep, group } from "k6";
 import {
@@ -124,7 +111,7 @@ export default function (data) {
         }
     });
 
-    sleep(0.3);
+    sleep(1);
 
     // READ ALL
     group("Users - Get All", function () {
@@ -137,7 +124,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.3);
+    sleep(1);
 
     // SEARCH
     group("Users - Search", function () {
@@ -153,7 +140,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.3);
+    sleep(1);
 
     // FILTER by faculty
     group("Users - Filter by Faculty", function () {
@@ -167,7 +154,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.3);
+    sleep(1);
 
     // FILTER by enrollment year
     group("Users - Filter by Enrollment Year", function () {
@@ -181,7 +168,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.3);
+    sleep(1);
 
     if (createdUserId) {
         // READ ONE
@@ -195,7 +182,7 @@ export default function (data) {
             });
         });
 
-        sleep(0.3);
+        sleep(1);
 
         // UPDATE
         group("Users - Update", function () {
@@ -219,7 +206,7 @@ export default function (data) {
         });
     }
 
-    sleep(0.3);
+    sleep(1);
 }
 
 export function teardown(data) {

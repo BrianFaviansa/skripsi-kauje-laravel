@@ -1,16 +1,3 @@
-/**
- * Job Module Load Test - Laravel
- *
- * Test scenarios:
- * - Create job
- * - Get all jobs
- * - Search jobs
- * - Filter by jobType
- * - Get one job
- * - Update job
- * - Delete job
- */
-
 import http from "k6/http";
 import { check, sleep, group } from "k6";
 import {
@@ -94,7 +81,7 @@ export default function (data) {
         }
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // READ ALL
     group("Jobs - Get All", function () {
@@ -107,7 +94,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // SEARCH
     group("Jobs - Search", function () {
@@ -120,7 +107,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // FILTER by job_type
     group("Jobs - Filter by Type", function () {
@@ -136,7 +123,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     if (createdJobId) {
         // READ ONE
@@ -150,7 +137,7 @@ export default function (data) {
             });
         });
 
-        sleep(0.5);
+        sleep(1);
 
         // UPDATE
         group("Jobs - Update", function () {
@@ -168,7 +155,7 @@ export default function (data) {
             });
         });
 
-        sleep(0.5);
+        sleep(1);
 
         // DELETE
         group("Jobs - Delete", function () {
@@ -182,7 +169,7 @@ export default function (data) {
         });
     }
 
-    sleep(0.5);
+    sleep(1);
 }
 
 export function teardown(data) {

@@ -1,16 +1,3 @@
-/**
- * News Module Load Test - Laravel
- *
- * Test scenarios:
- * - Create news
- * - Get all news
- * - Search news
- * - Filter by date range
- * - Get one news
- * - Update news
- * - Delete news
- */
-
 import http from "k6/http";
 import { check, sleep, group } from "k6";
 import {
@@ -83,7 +70,7 @@ export default function (data) {
         }
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // READ ALL
     group("News - Get All", function () {
@@ -96,7 +83,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // SEARCH
     group("News - Search", function () {
@@ -112,7 +99,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // FILTER by date range
     group("News - Filter by Date", function () {
@@ -130,7 +117,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     if (createdNewsId) {
         // READ ONE
@@ -144,7 +131,7 @@ export default function (data) {
             });
         });
 
-        sleep(0.5);
+        sleep(1);
 
         // UPDATE
         group("News - Update", function () {
@@ -162,7 +149,7 @@ export default function (data) {
             });
         });
 
-        sleep(0.5);
+        sleep(1);
 
         // DELETE
         group("News - Delete", function () {
@@ -176,7 +163,7 @@ export default function (data) {
         });
     }
 
-    sleep(0.5);
+    sleep(1);
 }
 
 export function teardown(data) {

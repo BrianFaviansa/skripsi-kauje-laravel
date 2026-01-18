@@ -1,10 +1,3 @@
-/**
- * Register Module Load Test - Laravel
- *
- * Test scenario: User Registration only
- * Generates unique NIM, email, and phone for each request
- */
-
 import http from "k6/http";
 import { check, sleep } from "k6";
 import {
@@ -76,7 +69,7 @@ export default function () {
         console.log(`Status: ${res.status}, Body: ${res.body}`);
     }
 
-    sleep(0.5);
+    sleep(1);
 }
 
 export function teardown() {

@@ -1,15 +1,3 @@
-/**
- * Collaboration Module Load Test - Laravel
- *
- * Test scenarios:
- * - Create collaboration
- * - Get all collaborations
- * - Search collaborations
- * - Get one collaboration
- * - Update collaboration
- * - Delete collaboration
- */
-
 import http from "k6/http";
 import { check, sleep, group } from "k6";
 import {
@@ -82,7 +70,7 @@ export default function (data) {
         }
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // READ ALL
     group("Collaborations - Get All", function () {
@@ -95,7 +83,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     // SEARCH
     group("Collaborations - Search", function () {
@@ -109,7 +97,7 @@ export default function (data) {
         });
     });
 
-    sleep(0.5);
+    sleep(1);
 
     if (createdCollaborationId) {
         // READ ONE
@@ -124,7 +112,7 @@ export default function (data) {
             });
         });
 
-        sleep(0.5);
+        sleep(1);
 
         // UPDATE
         group("Collaborations - Update", function () {
@@ -144,7 +132,7 @@ export default function (data) {
             });
         });
 
-        sleep(0.5);
+        sleep(1);
 
         // DELETE
         group("Collaborations - Delete", function () {
@@ -160,7 +148,7 @@ export default function (data) {
         });
     }
 
-    sleep(0.5);
+    sleep(1);
 }
 
 export function teardown(data) {
