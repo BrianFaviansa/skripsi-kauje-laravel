@@ -20,8 +20,6 @@ class ForumController extends Controller
         protected ForumService $forumService
     ) {}
 
-    // ========== Forum CRUD ==========
-
     public function index(GetForumRequest $request): JsonResponse
     {
         $result = $this->forumService->getAll($request->validated());
@@ -86,8 +84,6 @@ class ForumController extends Controller
         ]);
     }
 
-    // ========== Comment CRUD ==========
-
     public function getComments(GetCommentsRequest $request, string $forumId): JsonResponse
     {
         $result = $this->forumService->getComments($forumId, $request->validated());
@@ -127,8 +123,6 @@ class ForumController extends Controller
             'message' => 'Komentar berhasil dihapus',
         ]);
     }
-
-    // ========== Like ==========
 
     public function toggleLike(Request $request, string $forumId): JsonResponse
     {

@@ -27,7 +27,6 @@ class UserService
 
         $userQuery = User::query();
 
-        // Exclude Admin users
         $userQuery->whereHas('role', function ($roleQuery) {
             $roleQuery->where('name', '!=', 'Admin');
         });
@@ -153,7 +152,6 @@ class UserService
     {
         $this->ensureAdmin($admin);
 
-        // Check for existing user
         $existingUser = User::where('email', $data['email'])
             ->orWhere('nim', $data['nim'])
             ->orWhere('phone_number', $data['phone_number'])
@@ -171,7 +169,6 @@ class UserService
             }
         }
 
-        // Get default role if not provided
         if (empty($data['role_id'])) {
             $alumniRole = Role::where('name', 'Alumni')->first();
             if (!$alumniRole) {
@@ -180,10 +177,8 @@ class UserService
             $data['role_id'] = $alumniRole->id;
         }
 
-        // Hash password
         $data['password'] = Hash::make($data['password']);
 
-        // Auto verify users created by admin
         $data['verification_status'] = 'VERIFIED';
 
         return User::create($data);
@@ -199,7 +194,6 @@ class UserService
             throw new NotFoundHttpException('User tidak ditemukan');
         }
 
-        // Hash password if provided
         if (!empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         } else {
@@ -221,7 +215,6 @@ class UserService
             throw new NotFoundHttpException('User tidak ditemukan');
         }
 
-        // Prevent deleting admin users
         $user->load('role');
         if ($user->role?->name === 'Admin') {
             throw new AccessDeniedHttpException('Tidak dapat menghapus user Admin');

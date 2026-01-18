@@ -24,7 +24,6 @@ class ProductService
 
         $productQuery = Product::query();
 
-        // Search filter
         if ($q) {
             $productQuery->where(function ($query) use ($q) {
                 $query->where('name', 'ILIKE', "%{$q}%")
@@ -32,12 +31,10 @@ class ProductService
             });
         }
 
-        // Category filter
         if ($category) {
             $productQuery->where('category', $category);
         }
 
-        // Price range filter
         if ($minPrice !== null) {
             $productQuery->where('price', '>=', $minPrice);
         }
@@ -45,7 +42,6 @@ class ProductService
             $productQuery->where('price', '<=', $maxPrice);
         }
 
-        // Posted by filter
         if ($postedById) {
             $productQuery->where('posted_by_id', $postedById);
         }
@@ -96,7 +92,6 @@ class ProductService
             throw new NotFoundHttpException('Produk tidak ditemukan');
         }
 
-        // Authorization: Owner or Admin
         $this->ensureOwnerOrAdmin($user, $product);
 
         $product->update($data);
@@ -112,7 +107,6 @@ class ProductService
             throw new NotFoundHttpException('Produk tidak ditemukan');
         }
 
-        // Authorization: Owner or Admin
         $this->ensureOwnerOrAdmin($user, $product);
 
         $product->delete();

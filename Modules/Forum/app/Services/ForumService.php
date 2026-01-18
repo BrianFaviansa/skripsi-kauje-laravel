@@ -23,7 +23,6 @@ class ForumService
 
         $forumQuery = Forum::query();
 
-        // Search filter
         if ($q) {
             $forumQuery->where(function ($query) use ($q) {
                 $query->where('title', 'ILIKE', "%{$q}%")
@@ -31,7 +30,6 @@ class ForumService
             });
         }
 
-        // Posted by filter
         if ($postedById) {
             $forumQuery->where('posted_by_id', $postedById);
         }
@@ -67,7 +65,6 @@ class ForumService
             throw new NotFoundHttpException('Forum tidak ditemukan');
         }
 
-        // Check if current user has liked this forum
         $isLiked = false;
         if ($userId) {
             $isLiked = ForumLike::where('forum_id', $id)
@@ -96,7 +93,6 @@ class ForumService
             throw new NotFoundHttpException('Forum tidak ditemukan');
         }
 
-        // Authorization: Owner or Admin
         $this->ensureOwnerOrAdmin($user, $forum->posted_by_id);
 
         $forum->update($data);
@@ -112,7 +108,6 @@ class ForumService
             throw new NotFoundHttpException('Forum tidak ditemukan');
         }
 
-        // Authorization: Owner or Admin
         $this->ensureOwnerOrAdmin($user, $forum->posted_by_id);
 
         $forum->delete();
@@ -127,15 +122,12 @@ class ForumService
         return '/storage/' . $path;
     }
 
-    // ========== Comment Methods ==========
-
     public function getComments(string $forumId, array $query): array
     {
         $page = $query['page'] ?? 1;
         $limit = $query['limit'] ?? 10;
         $sortOrder = $query['sort_order'] ?? 'asc';
 
-        // Check if forum exists
         if (!Forum::find($forumId)) {
             throw new NotFoundHttpException('Forum tidak ditemukan');
         }
@@ -163,7 +155,6 @@ class ForumService
 
     public function createComment(User $user, string $forumId, array $data): ForumComment
     {
-        // Check if forum exists
         if (!Forum::find($forumId)) {
             throw new NotFoundHttpException('Forum tidak ditemukan');
         }
@@ -183,7 +174,6 @@ class ForumService
             throw new NotFoundHttpException('Komentar tidak ditemukan');
         }
 
-        // Authorization: Owner or Admin
         $this->ensureOwnerOrAdmin($user, $comment->posted_by_id);
 
         $comment->update($data);
@@ -199,17 +189,13 @@ class ForumService
             throw new NotFoundHttpException('Komentar tidak ditemukan');
         }
 
-        // Authorization: Owner or Admin
         $this->ensureOwnerOrAdmin($user, $comment->posted_by_id);
 
         $comment->delete();
     }
 
-    // ========== Like Methods ==========
-
     public function toggleLike(User $user, string $forumId): array
     {
-        // Check if forum exists
         if (!Forum::find($forumId)) {
             throw new NotFoundHttpException('Forum tidak ditemukan');
         }
@@ -219,11 +205,9 @@ class ForumService
             ->first();
 
         if ($existingLike) {
-            // Unlike
             $existingLike->delete();
             return ['message' => 'Forum berhasil di-unlike', 'is_liked' => false];
         } else {
-            // Like
             ForumLike::create([
                 'forum_id' => $forumId,
                 'liked_by_id' => $user->id,
@@ -234,7 +218,6 @@ class ForumService
 
     public function getLikes(string $forumId): array
     {
-        // Check if forum exists
         if (!Forum::find($forumId)) {
             throw new NotFoundHttpException('Forum tidak ditemukan');
         }
