@@ -4,6 +4,7 @@ namespace Modules\Forum\Services;
 
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Modules\Forum\Models\Forum;
 use Modules\Forum\Models\ForumComment;
 use Modules\Forum\Models\ForumLike;
@@ -12,6 +13,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ForumService
 {
+    private const CACHE_TTL_LIST = 60;
+    private const CACHE_TTL_ITEM = 300;
+    private const CACHE_PREFIX = 'forums:';
+
     public function getAll(array $query): array
     {
         $page = $query['page'] ?? 1;
@@ -21,49 +26,59 @@ class ForumService
         $sortBy = $query['sort_by'] ?? 'created_at';
         $sortOrder = $query['sort_order'] ?? 'desc';
 
-        $forumQuery = Forum::query();
+        $cacheKey = self::CACHE_PREFIX . "list:{$page}:{$limit}:" . md5(json_encode($query));
 
-        if ($q) {
-            $forumQuery->where(function ($query) use ($q) {
-                $query->where('title', 'ILIKE', "%{$q}%")
-                    ->orWhere('content', 'ILIKE', "%{$q}%");
-            });
-        }
+        return Cache::remember($cacheKey, self::CACHE_TTL_LIST, function () use ($q, $postedById, $sortBy, $sortOrder, $page, $limit) {
+            $forumQuery = Forum::query();
 
-        if ($postedById) {
-            $forumQuery->where('posted_by_id', $postedById);
-        }
+            if ($q) {
+                $forumQuery->where(function ($query) use ($q) {
+                    $query->where('title', 'ILIKE', "%{$q}%")
+                        ->orWhere('content', 'ILIKE', "%{$q}%");
+                });
+            }
 
-        $forumQuery->orderBy($sortBy, $sortOrder);
+            if ($postedById) {
+                $forumQuery->where('posted_by_id', $postedById);
+            }
 
-        $total = $forumQuery->count();
-        $forums = $forumQuery
-            ->with(['postedBy:id,name,email,profile_picture_url'])
-            ->withCount(['comments', 'forumLikes'])
-            ->skip(($page - 1) * $limit)
-            ->take($limit)
-            ->get();
+            $forumQuery->orderBy($sortBy, $sortOrder);
 
-        return [
-            'data' => $forums,
-            'meta' => [
-                'total' => $total,
-                'page' => (int) $page,
-                'limit' => (int) $limit,
-                'total_pages' => (int) ceil($total / $limit),
-            ],
-        ];
+            $total = $forumQuery->count();
+            $forums = $forumQuery
+                ->with(['postedBy:id,name,email,profile_picture_url'])
+                ->withCount(['comments', 'forumLikes'])
+                ->skip(($page - 1) * $limit)
+                ->take($limit)
+                ->get();
+
+            return [
+                'data' => $forums,
+                'meta' => [
+                    'total' => $total,
+                    'page' => (int) $page,
+                    'limit' => (int) $limit,
+                    'total_pages' => (int) ceil($total / $limit),
+                ],
+            ];
+        });
     }
 
     public function getById(string $id, ?string $userId = null): array
     {
-        $forum = Forum::with(['postedBy:id,name,profile_picture_url'])
-            ->withCount(['comments', 'forumLikes'])
-            ->find($id);
+        $cacheKey = self::CACHE_PREFIX . "item:{$id}";
 
-        if (!$forum) {
-            throw new NotFoundHttpException('Forum tidak ditemukan');
-        }
+        $forum = Cache::remember($cacheKey, self::CACHE_TTL_ITEM, function () use ($id) {
+            $forum = Forum::with(['postedBy:id,name,profile_picture_url'])
+                ->withCount(['comments', 'forumLikes'])
+                ->find($id);
+
+            if (!$forum) {
+                throw new NotFoundHttpException('Forum tidak ditemukan');
+            }
+
+            return $forum;
+        });
 
         $isLiked = false;
         if ($userId) {
@@ -82,7 +97,11 @@ class ForumService
     {
         $data['posted_by_id'] = $user->id;
 
-        return Forum::create($data);
+        $forum = Forum::create($data);
+
+        $this->invalidateCache();
+
+        return $forum;
     }
 
     public function update(User $user, string $id, array $data): Forum
@@ -96,6 +115,9 @@ class ForumService
         $this->ensureOwnerOrAdmin($user, $forum->posted_by_id);
 
         $forum->update($data);
+
+        $this->invalidateCache();
+        Cache::forget(self::CACHE_PREFIX . "item:{$id}");
 
         return $forum->fresh();
     }
@@ -111,6 +133,9 @@ class ForumService
         $this->ensureOwnerOrAdmin($user, $forum->posted_by_id);
 
         $forum->delete();
+
+        $this->invalidateCache();
+        Cache::forget(self::CACHE_PREFIX . "item:{$id}");
     }
 
     public function uploadImage(UploadedFile $file): string
@@ -159,11 +184,15 @@ class ForumService
             throw new NotFoundHttpException('Forum tidak ditemukan');
         }
 
-        return ForumComment::create([
+        $comment = ForumComment::create([
             'content' => $data['content'],
             'posted_by_id' => $user->id,
             'forum_id' => $forumId,
         ]);
+
+        $this->invalidateCache();
+
+        return $comment;
     }
 
     public function updateComment(User $user, string $commentId, array $data): ForumComment
@@ -192,6 +221,8 @@ class ForumService
         $this->ensureOwnerOrAdmin($user, $comment->posted_by_id);
 
         $comment->delete();
+
+        $this->invalidateCache();
     }
 
     public function toggleLike(User $user, string $forumId): array
@@ -206,14 +237,18 @@ class ForumService
 
         if ($existingLike) {
             $existingLike->delete();
-            return ['message' => 'Forum berhasil di-unlike', 'is_liked' => false];
+            $result = ['message' => 'Forum berhasil di-unlike', 'is_liked' => false];
         } else {
             ForumLike::create([
                 'forum_id' => $forumId,
                 'liked_by_id' => $user->id,
             ]);
-            return ['message' => 'Forum berhasil di-like', 'is_liked' => true];
+            $result = ['message' => 'Forum berhasil di-like', 'is_liked' => true];
         }
+
+        $this->invalidateCache();
+
+        return $result;
     }
 
     public function getLikes(string $forumId): array
@@ -242,6 +277,23 @@ class ForumService
 
         if (!$isAdmin && !$isOwner) {
             throw new AccessDeniedHttpException('Anda tidak memiliki izin untuk melakukan aksi ini');
+        }
+    }
+
+    private function invalidateCache(): void
+    {
+        try {
+            $redis = Cache::getStore()->getRedis();
+            $keys = $redis->keys(config('database.redis.options.prefix') . self::CACHE_PREFIX . '*');
+            if (!empty($keys)) {
+                $prefix = config('database.redis.options.prefix');
+                $keysToDelete = array_map(fn($key) => str_replace($prefix, '', $key), $keys);
+                foreach ($keysToDelete as $key) {
+                    Cache::forget($key);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to invalidate forums cache: ' . $e->getMessage());
         }
     }
 }

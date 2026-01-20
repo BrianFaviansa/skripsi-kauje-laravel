@@ -30,7 +30,7 @@ RUN docker-php-ext-install \
     opcache \
     sockets
 
-# Install Swoole
+# Install Swoole with optimizations
 RUN pecl install swoole && docker-php-ext-enable swoole
 
 # Install Redis extension
@@ -70,18 +70,23 @@ LABEL description="Laravel application with Octane and Swoole"
 # Set working directory
 WORKDIR /app
 
-# Configure PHP OPcache for production performance
+# Configure PHP OPcache for maximum production performance
 RUN { \
     echo 'opcache.enable=1'; \
+    echo 'opcache.enable_cli=1'; \
     echo 'opcache.memory_consumption=256'; \
     echo 'opcache.interned_strings_buffer=64'; \
-    echo 'opcache.max_accelerated_files=30000'; \
+    echo 'opcache.max_accelerated_files=65535'; \
+    echo 'opcache.max_wasted_percentage=10'; \
     echo 'opcache.validate_timestamps=0'; \
     echo 'opcache.save_comments=1'; \
     echo 'opcache.fast_shutdown=1'; \
+    echo 'opcache.revalidate_freq=0'; \
+    echo 'opcache.jit=1255'; \
+    echo 'opcache.jit_buffer_size=128M'; \
     } > /usr/local/etc/php/conf.d/opcache-production.ini
 
-# Configure PHP for production
+# Configure PHP for high-performance production
 RUN { \
     echo 'memory_limit=512M'; \
     echo 'max_execution_time=60'; \
@@ -91,6 +96,10 @@ RUN { \
     echo 'display_errors=Off'; \
     echo 'log_errors=On'; \
     echo 'error_log=/app/storage/logs/php_errors.log'; \
+    echo 'realpath_cache_size=4096K'; \
+    echo 'realpath_cache_ttl=600'; \
+    echo 'output_buffering=4096'; \
+    echo 'implicit_flush=Off'; \
     } > /usr/local/etc/php/conf.d/php-production.ini
 
 # Copy application code
@@ -103,7 +112,7 @@ COPY --from=composer /app/vendor ./vendor
 COPY --from=composer /usr/bin/composer /usr/bin/composer
 
 # Generate optimized autoload
-RUN composer dump-autoload --optimize --no-dev
+RUN composer dump-autoload --optimize --no-dev --classmap-authoritative
 
 # Create necessary directories
 RUN mkdir -p storage/framework/cache/data \

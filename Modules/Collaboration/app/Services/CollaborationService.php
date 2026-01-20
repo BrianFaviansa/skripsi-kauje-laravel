@@ -4,12 +4,17 @@ namespace Modules\Collaboration\Services;
 
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Modules\Collaboration\Models\Collaboration;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class CollaborationService
 {
+    private const CACHE_TTL_LIST = 60;
+    private const CACHE_TTL_ITEM = 300;
+    private const CACHE_PREFIX = 'collaborations:';
+
     public function getAll(array $query): array
     {
         $page = $query['page'] ?? 1;
@@ -20,67 +25,75 @@ class CollaborationService
         $sortBy = $query['sort_by'] ?? 'created_at';
         $sortOrder = $query['sort_order'] ?? 'desc';
 
-        $collaborationQuery = Collaboration::query();
+        $cacheKey = self::CACHE_PREFIX . "list:{$page}:{$limit}:" . md5(json_encode($query));
 
-        if ($q) {
-            $collaborationQuery->where(function ($query) use ($q) {
-                $query->where('title', 'ILIKE', "%{$q}%")
-                    ->orWhere('content', 'ILIKE', "%{$q}%");
-            });
-        }
+        return Cache::remember($cacheKey, self::CACHE_TTL_LIST, function () use ($q, $collaborationFieldId, $postedById, $sortBy, $sortOrder, $page, $limit) {
+            $collaborationQuery = Collaboration::query();
 
-        if ($collaborationFieldId) {
-            $collaborationQuery->where('collaboration_field_id', $collaborationFieldId);
-        }
+            if ($q) {
+                $collaborationQuery->where(function ($query) use ($q) {
+                    $query->where('title', 'ILIKE', "%{$q}%")
+                        ->orWhere('content', 'ILIKE', "%{$q}%");
+                });
+            }
 
-        if ($postedById) {
-            $collaborationQuery->where('posted_by_id', $postedById);
-        }
+            if ($collaborationFieldId) {
+                $collaborationQuery->where('collaboration_field_id', $collaborationFieldId);
+            }
 
-        $collaborationQuery->orderBy($sortBy, $sortOrder);
+            if ($postedById) {
+                $collaborationQuery->where('posted_by_id', $postedById);
+            }
 
-        $total = $collaborationQuery->count();
-        $collaborations = $collaborationQuery
-            ->with([
-                'collaborationField:id,name',
-                'postedBy:id,name,email',
-            ])
-            ->skip(($page - 1) * $limit)
-            ->take($limit)
-            ->get()
-            ->map(function ($collaboration) {
-                return [
-                    ...$collaboration->toArray(),
-                    'collaboration_field' => $collaboration->collaborationField?->name,
-                ];
-            });
+            $collaborationQuery->orderBy($sortBy, $sortOrder);
 
-        return [
-            'data' => $collaborations,
-            'meta' => [
-                'total' => $total,
-                'page' => (int) $page,
-                'limit' => (int) $limit,
-                'total_pages' => (int) ceil($total / $limit),
-            ],
-        ];
+            $total = $collaborationQuery->count();
+            $collaborations = $collaborationQuery
+                ->with([
+                    'collaborationField:id,name',
+                    'postedBy:id,name,email',
+                ])
+                ->skip(($page - 1) * $limit)
+                ->take($limit)
+                ->get()
+                ->map(function ($collaboration) {
+                    return [
+                        ...$collaboration->toArray(),
+                        'collaboration_field' => $collaboration->collaborationField?->name,
+                    ];
+                });
+
+            return [
+                'data' => $collaborations,
+                'meta' => [
+                    'total' => $total,
+                    'page' => (int) $page,
+                    'limit' => (int) $limit,
+                    'total_pages' => (int) ceil($total / $limit),
+                ],
+            ];
+        });
     }
 
     public function getById(string $id): array
     {
-        $collaboration = Collaboration::with([
-            'collaborationField:id,name',
-            'postedBy:id,name,profile_picture_url',
-        ])->find($id);
+        $cacheKey = self::CACHE_PREFIX . "item:{$id}";
 
-        if (!$collaboration) {
-            throw new NotFoundHttpException('Kolaborasi tidak ditemukan');
-        }
+        return Cache::remember($cacheKey, self::CACHE_TTL_ITEM, function () use ($id) {
+            $collaboration = Collaboration::with([
+                'collaborationField:id,name',
+                'postedBy:id,name,profile_picture_url',
+            ])->find($id);
 
-        return [
-            ...$collaboration->toArray(),
-            'collaboration_field' => $collaboration->collaborationField?->name,
-        ];
+            if (!$collaboration) {
+                throw new NotFoundHttpException('Kolaborasi tidak ditemukan');
+            }
+
+            return [
+                ...$collaboration->toArray(),
+                'collaboration_field' => $collaboration->collaborationField?->name,
+            ];
+        });
     }
 
     public function create(User $user, array $data): Collaboration
@@ -91,7 +104,11 @@ class CollaborationService
             unset($data['collaboration_field_id']);
         }
 
-        return Collaboration::create($data);
+        $collaboration = Collaboration::create($data);
+
+        $this->invalidateCache();
+
+        return $collaboration;
     }
 
     public function update(User $user, string $id, array $data): Collaboration
@@ -110,6 +127,9 @@ class CollaborationService
 
         $collaboration->update($data);
 
+        $this->invalidateCache();
+        Cache::forget(self::CACHE_PREFIX . "item:{$id}");
+
         return $collaboration->fresh();
     }
 
@@ -124,6 +144,9 @@ class CollaborationService
         $this->ensureOwnerOrAdmin($user, $collaboration);
 
         $collaboration->delete();
+
+        $this->invalidateCache();
+        Cache::forget(self::CACHE_PREFIX . "item:{$id}");
     }
 
     public function uploadImage(UploadedFile $file): string
@@ -141,6 +164,23 @@ class CollaborationService
 
         if ($user->role->name !== 'Admin' && $collaboration->posted_by_id !== $user->id) {
             throw new AccessDeniedHttpException('Anda tidak memiliki izin untuk mengubah kolaborasi ini');
+        }
+    }
+
+    private function invalidateCache(): void
+    {
+        try {
+            $redis = Cache::getStore()->getRedis();
+            $keys = $redis->keys(config('database.redis.options.prefix') . self::CACHE_PREFIX . 'list:*');
+            if (!empty($keys)) {
+                $prefix = config('database.redis.options.prefix');
+                $keysToDelete = array_map(fn($key) => str_replace($prefix, '', $key), $keys);
+                foreach ($keysToDelete as $key) {
+                    Cache::forget($key);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Failed to invalidate collaborations cache: ' . $e->getMessage());
         }
     }
 }
