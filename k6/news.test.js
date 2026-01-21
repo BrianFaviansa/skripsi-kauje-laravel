@@ -6,7 +6,7 @@ import {
     OPTIONS,
     THRESHOLDS,
     handleSummary,
-} from "./config/config.js";
+} from "./config.js";
 
 export { handleSummary };
 
@@ -24,7 +24,7 @@ export function setup() {
         }),
         {
             headers: { "Content-Type": "application/json" },
-        }
+        },
     );
 
     const body = JSON.parse(loginRes.body);
@@ -91,7 +91,7 @@ export default function (data) {
             `${BASE_URL}/news?search=berita&page=1&per_page=10`,
             {
                 headers: authHeaders,
-            }
+            },
         );
 
         check(res, {
@@ -109,7 +109,7 @@ export default function (data) {
 
         const res = http.get(
             `${BASE_URL}/news?start_date=${startDate}&end_date=${today}&page=1&per_page=10`,
-            { headers: authHeaders }
+            { headers: authHeaders },
         );
 
         check(res, {

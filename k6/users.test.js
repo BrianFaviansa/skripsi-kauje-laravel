@@ -7,7 +7,7 @@ import {
     OPTIONS,
     THRESHOLDS,
     handleSummary,
-} from "./config/config.js";
+} from "./config.js";
 
 export { handleSummary };
 
@@ -27,7 +27,7 @@ export function setup() {
         }),
         {
             headers: { "Content-Type": "application/json" },
-        }
+        },
     );
 
     const success = check(loginRes, {
@@ -54,14 +54,14 @@ export default function (data) {
     vuCounter++;
 
     const ts = Date.now();
-    const vuPad = String(__VU).padStart(3, "0")
-    const counterPad = String(vuCounter).padStart(5, "0"); 
-    const tsLast = String(ts).slice(-6); 
+    const vuPad = String(__VU).padStart(3, "0");
+    const counterPad = String(vuCounter).padStart(5, "0");
+    const tsLast = String(ts).slice(-6);
 
     const randomNim = `${vuPad}${counterPad}${tsLast.slice(-2)}`;
 
     const randomPhone = `08${String(__VU).padStart(2, "0")}${String(
-        vuCounter
+        vuCounter,
     ).padStart(4, "0")}${tsLast.slice(-4)}`;
 
     const randomEmail = `v${__VU}c${vuCounter}t${ts}@k6.test`;
@@ -95,7 +95,7 @@ export default function (data) {
 
         if (res.status !== 201 && vuCounter <= 2 && __VU <= 3) {
             console.log(
-                `VU${__VU} Counter${vuCounter}: ${res.status} - ${res.body}`
+                `VU${__VU} Counter${vuCounter}: ${res.status} - ${res.body}`,
             );
         }
 
@@ -132,7 +132,7 @@ export default function (data) {
             `${BASE_URL}/users?search=test&page=1&per_page=10`,
             {
                 headers: authHeaders,
-            }
+            },
         );
 
         check(res, {
@@ -146,7 +146,7 @@ export default function (data) {
     group("Users - Filter by Faculty", function () {
         const res = http.get(
             `${BASE_URL}/users?faculty_id=${FOREIGN_KEYS.facultyId}&page=1&per_page=10`,
-            { headers: authHeaders }
+            { headers: authHeaders },
         );
 
         check(res, {
@@ -160,7 +160,7 @@ export default function (data) {
     group("Users - Filter by Enrollment Year", function () {
         const res = http.get(
             `${BASE_URL}/users?enrollment_year=2020&page=1&per_page=10`,
-            { headers: authHeaders }
+            { headers: authHeaders },
         );
 
         check(res, {
@@ -197,7 +197,7 @@ export default function (data) {
                 payload,
                 {
                     headers: authHeaders,
-                }
+                },
             );
 
             check(res, {

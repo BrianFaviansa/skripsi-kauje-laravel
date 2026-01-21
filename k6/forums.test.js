@@ -6,7 +6,7 @@ import {
     OPTIONS,
     THRESHOLDS,
     handleSummary,
-} from "./config/config.js";
+} from "./config.js";
 
 export { handleSummary };
 
@@ -24,7 +24,7 @@ export function setup() {
         }),
         {
             headers: { "Content-Type": "application/json" },
-        }
+        },
     );
 
     const body = JSON.parse(loginRes.body);
@@ -90,7 +90,7 @@ export default function (data) {
             `${BASE_URL}/forums?search=forum&page=1&per_page=10`,
             {
                 headers: authHeaders,
-            }
+            },
         );
 
         check(res, {
@@ -126,7 +126,7 @@ export default function (data) {
                 payload,
                 {
                     headers: authHeaders,
-                }
+                },
             );
 
             check(res, {
@@ -145,7 +145,7 @@ export default function (data) {
             const res = http.post(
                 `${BASE_URL}/forums/${createdForumId}/comments`,
                 payload,
-                { headers: authHeaders }
+                { headers: authHeaders },
             );
 
             check(res, {
@@ -168,7 +168,7 @@ export default function (data) {
                 `${BASE_URL}/forums/${createdForumId}/comments`,
                 {
                     headers: authHeaders,
-                }
+                },
             );
 
             check(res, {
@@ -185,7 +185,7 @@ export default function (data) {
                 null,
                 {
                     headers: authHeaders,
-                }
+                },
             );
 
             check(res, {
@@ -203,7 +203,7 @@ export default function (data) {
                 null,
                 {
                     headers: authHeaders,
-                }
+                },
             );
 
             check(res, {
@@ -219,7 +219,7 @@ export default function (data) {
                 const res = http.del(
                     `${BASE_URL}/forums/comments/${createdCommentId}`,
                     null,
-                    { headers: authHeaders }
+                    { headers: authHeaders },
                 );
 
                 check(res, {

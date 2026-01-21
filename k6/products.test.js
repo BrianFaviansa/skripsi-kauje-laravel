@@ -6,7 +6,7 @@ import {
     OPTIONS,
     THRESHOLDS,
     handleSummary,
-} from "./config/config.js";
+} from "./config.js";
 
 export { handleSummary };
 
@@ -24,7 +24,7 @@ export function setup() {
         }),
         {
             headers: { "Content-Type": "application/json" },
-        }
+        },
     );
 
     const body = JSON.parse(loginRes.body);
@@ -110,7 +110,7 @@ export default function (data) {
     group("Products - Search", function () {
         const res = http.get(
             `${BASE_URL}/products?search=produk&page=1&per_page=10`,
-            { headers: authHeaders }
+            { headers: authHeaders },
         );
 
         check(res, {
@@ -124,7 +124,7 @@ export default function (data) {
     group("Products - Filter by Category", function () {
         const res = http.get(
             `${BASE_URL}/products?category=PRODUK&page=1&per_page=10`,
-            { headers: authHeaders }
+            { headers: authHeaders },
         );
 
         check(res, {
@@ -138,7 +138,7 @@ export default function (data) {
     group("Products - Filter by Price Range", function () {
         const res = http.get(
             `${BASE_URL}/products?min_price=100000&max_price=500000&page=1&per_page=10`,
-            { headers: authHeaders }
+            { headers: authHeaders },
         );
 
         check(res, {
@@ -175,7 +175,7 @@ export default function (data) {
                 payload,
                 {
                     headers: authHeaders,
-                }
+                },
             );
 
             check(res, {
@@ -192,7 +192,7 @@ export default function (data) {
                 null,
                 {
                     headers: authHeaders,
-                }
+                },
             );
 
             check(res, {

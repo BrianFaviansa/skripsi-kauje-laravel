@@ -7,7 +7,7 @@ import {
     OPTIONS,
     THRESHOLDS,
     handleSummary,
-} from "./config/config.js";
+} from "./config.js";
 
 export { handleSummary };
 
@@ -25,7 +25,7 @@ export function setup() {
         }),
         {
             headers: { "Content-Type": "application/json" },
-        }
+        },
     );
 
     const body = JSON.parse(loginRes.body);
@@ -115,7 +115,7 @@ export default function (data) {
             `${BASE_URL}/jobs?job_type=LOKER&page=1&per_page=10`,
             {
                 headers: authHeaders,
-            }
+            },
         );
 
         check(res, {

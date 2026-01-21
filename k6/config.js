@@ -1,4 +1,4 @@
-export const BASE_URL = __ENV.API_URL || "http://43.228.215.252:8000/api";
+export const BASE_URL = __ENV.API_URL || "http://43.228.212.184:8000/api";
 
 export const TEST_USER = {
     nim: "202410101014",
@@ -6,13 +6,13 @@ export const TEST_USER = {
 };
 
 export const FOREIGN_KEYS = {
-    provinceId: "019b783f-b33a-7004-91da-c62a2b33096d",
-    cityId: "019b783f-b345-70a7-99ad-f380e7eb054b",
-    facultyId: "019b783f-b303-71e7-bdb7-a8468324ee67",
-    majorId: "019b7840-0185-71a6-8b04-f7c56ea1b1d0",
-    roleId: "019b783f-b2ff-7314-b244-83cbc5f145c1",
-    jobFieldId: "019b783f-b313-7337-afa0-91be3a383bef",
-    collaborationFieldId: "019b783f-b31e-72a5-9621-d262b371772a",
+    provinceId: "019bdc32-e5bb-7072-9441-488dbe0806b5",
+    cityId: "019bdc32-e5c7-7356-9d4d-ded865a5637e",
+    facultyId: "019bdc32-e54c-71dd-b715-d2091b9fd4ed",
+    majorId: "019bdc33-3404-708a-b848-31d07e1c4a2c",
+    roleId: "019bdc32-e544-738c-8c9b-45f0e7ea63aa",
+    jobFieldId: "019bdc32-e572-7266-90e7-36dbd9726eb6",
+    collaborationFieldId: "019bdc32-e588-701a-9f61-479cf41f825d",
 };
 
 export const OPTIONS = {
@@ -32,8 +32,8 @@ export const OPTIONS = {
 };
 
 export const THRESHOLDS = {
-    http_req_duration: ["p(95)<1000"], 
-    http_req_failed: ["rate<0.10"], 
+    http_req_duration: ["p(95)<1000"],
+    http_req_failed: ["rate<0.10"],
 };
 
 export function handleSummary(data) {
