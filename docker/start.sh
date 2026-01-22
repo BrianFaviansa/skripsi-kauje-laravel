@@ -35,12 +35,14 @@ EOF
     echo "✅ .env file created"
 fi
 
-# Generate APP_KEY if not set
-if [ -z "$APP_KEY" ] || ! grep -q "APP_KEY=base64" /app/.env; then
+# Check if APP_KEY is already set in environment
+if [ -n "$APP_KEY" ] && [[ "$APP_KEY" == base64:* ]]; then
+    echo "✅ APP_KEY already set from environment"
+else
     echo "⚙️  Generating application key..."
     php artisan config:clear 2>/dev/null || true
     php artisan key:generate --force
-    export APP_KEY=$(grep "^APP_KEY=" /app/.env | cut -d '=' -f2)
+    export APP_KEY=$(grep "^APP_KEY=" /app/.env | sed 's/APP_KEY=//' | tr -d '"')
 fi
 
 # Wait for database to be ready
